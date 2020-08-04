@@ -1,0 +1,2 @@
+# draughts
+draughts for web
