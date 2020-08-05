@@ -31,6 +31,10 @@ justify-items: center;
     align-content: center;
     justify-content: center;
 }
+.endEnable
+{
+    border: .5rem solid salmon;
+}
 .piece
 {
     height: 4rem;

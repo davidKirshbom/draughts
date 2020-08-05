@@ -1,62 +1,64 @@
 class Square {
-    constructor(piece) {
+    constructor(piece, row, column) {
+        this.position={row,column}
         this.pieceOn = piece;
+        this.isPossibleEndMovment = false;
+   
     }
     
     isEnableEndMovment = function (originPosition, board) {
         
     };
-    getClassNameByState = function (board, state) {
+    getClassNameByState = function (board, leagalMoveFunc,originLocationOnMovment) {
         let className = "square ";
-     
+        if (originLocationOnMovment)
+            className += this.isPossibleEndMovment ? "endEnable" : "";
         return className
     }
+    // isEnableEndMovment(leagalMoveFunc, originPosition,board)
+    // {
+    //    return leagalMoveFunc(board, originPosition, this.position)   
+    // }
 }
 class Piece {
-    constructor(row, column, color) {
+    constructor(row, column, color,id) {
         this.position = { row, column }
         this.color = color;
-        this.getMovmentFactor = () => this.color == "gray" ? -1 : 1;
+        this.canStartMovment = false;
+        this.getMovmentFactor = color == "gray" ? -1 : 1;
+        this.id = id;
     }
     getClassName(board,legalMoveFunc) {
-        return `piece ${this.color} ${this.isEnableStartMovment(legalMoveFunc,board) ? "startEnable" : ""}`;
+        return `piece ${this.color} ${this.canStartMovment ? "startEnable" : ""}`;
     }
-    isEnableStartMovment(legalMoveFunc, board) {
-        let targetRow = this.position.row + 1 * this.getMovmentFactor()
-        let targetColRight = this.position.column + 1 >= board[targetRow].length ? null : this.position.column + 1;
-        let targetColLeft = this.position.column - 1 < 0 ? null : this.position.column - 1;
-        if (legalMoveFunc(board, { row: this.position.row, column: this.position.column }, { row: targetRow, column: targetColRight })
-        ||legalMoveFunc(board, { row: this.position.row, column: this.position.column }, { row: targetRow, column: targetColLeft }))
-            return true;
-        else
-            return false;
-    }
-        
-   
+    
+    
 }
-
         //function legalMove(originPosition,target)
-        function generateStartBoard() {
-            let board = [];
-            for (let row = 0; row < 8; row++) {
-                let rowArray = [];
-                let column;
-                for (column = 0; column < 8; column++) {
+function generateStartBoard() {
+    let board = [];
+    let picesCount = 0;
+    for (let row = 0; row < 8; row++) {
+        let rowArray = [];
+        let column;
+        for (column = 0; column < 8; column++) {
             
-                    let pieceToAdd;
-                    if ((row + column) % 2 != 0) {
-                        if (row < 3)
-                            pieceToAdd = new Piece(row,column,"red")
-                        if (row >= 5)
-                            pieceToAdd = new Piece(row,column,"gray")
-                    }
-            
-                    rowArray.push(new Square(pieceToAdd))
-                }
-                board.push(rowArray);
+            let pieceToAdd;
+            if ((row + column) % 2 != 0) {
+                if (row < 3)
+                    pieceToAdd = new Piece(row, column, "red",picesCount++)
+                else if (row >= 5)
+                    pieceToAdd = new Piece(row, column, "gray", picesCount++)
+                
             }
-            return board;
+            
+            rowArray.push(new Square(pieceToAdd))
         }
+        board.push(rowArray);
+    }
+    updatePicesCanMove(board)
+    return board;
+}
         let board = generateStartBoard();
         board.getConsolePrint = function () {
             let resultBoard = [];
@@ -73,17 +75,64 @@ class Piece {
             }
         }
         updateBoardUi(board);
-        board.getConsolePrint();
+board.getConsolePrint();
+
+function startMovment(event)
+{
+    let startMovmentPoint = getPieceOnBoardById(board, event.target.getAttribute("id"))
+    updatePicesCanMove(board, true);//true-unable all pices
+    updatepossibleSquaresToMove(board, startMovmentPoint);
+    updateBoardUi(board);
+    
+}
+function getPieceOnBoardById(board,id)
+{
+    for (let row = 0; row < board.length; row++) {
+        for (let column = 0; column < board[row].length; column++) {
+            if (board[row][column].pieceOn&&board[row][column].pieceOn.id == id)
+               return board[row][column].pieceOn
+        }
+    }
+    return null;
+}
+function updatepossibleSquaresToMove(board,startMovmentPoint)
+{
+
+}
+function updatePicesCanMove(board,unableAll) {
+    for (let row = 0; row < board.length; row++) {
+        for (let column = 0; column < board[row].length; column++) {
+            if (!board[row][column].pieceOn)
+                continue;
+            if (unableAll)
+            {
+                board[row][column].pieceOn.canStartMovment = false;
+                continue;
+                }
+            let targetRow = row + 1 * board[row][column].pieceOn.getMovmentFactor
+            let targetColRight = column + 1 >= board[targetRow].length ? null : column + 1;
+            let targetColLeft = column - 1 < 0 ? null : column - 1;
+            if (legalMove(board, { row, column }, { row: targetRow, column: targetColRight })
+                || legalMove(board, { row, column }, { row: targetRow, column: targetColLeft }))
+                board[row][column].pieceOn.canStartMovment = true;
+            else
+                board[row][column].pieceOn.canStartMovment = false;
+        }
+    }
+}
 function updateBoardUi(board) {
     let boardUi = document.getElementsByClassName("board")[0]
+    boardUi.innerHTML = "";
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             let squareUi = document.createElement("div");
             let pieceUi;
-          
             if (board[row][column].pieceOn) {
-               
+                let piece = board[row][column].pieceOn;
                 pieceUi = document.createElement("span");
+                console.log(piece.id)
+                pieceUi.setAttribute("id", `${piece.id}`)//to connect between frontUI to back
+                pieceUi.addEventListener("click",startMovment)
                 pieceUi.setAttribute("class", board[row][column].pieceOn.getClassName(board,legalMove))
             }
             if (row % 2 == 0) {
@@ -98,7 +147,7 @@ function updateBoardUi(board) {
                 else
                     squareUi.color = "white"
             }
-            squareUi.setAttribute("class", board[row][column].getClassNameByState(board, "startMovment") + " " + squareUi.color);
+            squareUi.setAttribute("class", board[row][column].getClassNameByState(board,legalMove, "startMovment") + " " + squareUi.color);
      
             if (pieceUi) {
                 squareUi.appendChild(pieceUi)
