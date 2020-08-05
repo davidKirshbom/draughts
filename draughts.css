@@ -1,8 +1,8 @@
 .board{
 display: grid;
 grid-auto-rows: 5rem;
-
 grid-auto-columns: 5rem;
+
 align-items: center;
 justify-items: center;
 }
@@ -18,14 +18,18 @@ justify-items: center;
 {
     background: red;
 }
-.grey
+.gray
 {
-    background: grey;
+    background: gray;
 }
 .square
 {
     height: 5rem;
     width: 5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
 }
 .piece
 {
@@ -34,4 +38,10 @@ justify-items: center;
  
     border-radius: 50%;
     display: inline-block;
+    position: relative;
+    
+}
+.startEnable
+{
+    border: .5rem solid blue;
 }
