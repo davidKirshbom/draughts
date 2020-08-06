@@ -69,9 +69,10 @@ board.getConsolePrint = function () {
     }
 }
 updateBoardUi(board);
+let startMovmentPoint;
 function startMovment(event)
 {
-    let startMovmentPoint = getPieceLocationOnBoardById(board, event.target.getAttribute("id"))
+    startMovmentPoint = getPieceLocationOnBoardById(board, event.target.getAttribute("id"))
     updatepossibleSquaresToMove(board, startMovmentPoint);
     updateBoardUi(board);
     
@@ -86,7 +87,7 @@ function getPieceLocationOnBoardById(board,id)
     }
     return null;
 }
-function updatepossibleSquaresToMove(board, startMovmentPoint) {
+function updatepossibleSquaresToMove(board, startMovmentPoint,unpossibleAll) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             {
@@ -102,19 +103,66 @@ function updatepossibleSquaresToMove(board, startMovmentPoint) {
     }
 }
 function updatePicesCanMove(board) {
+    updateAllPicesCantMove(board)
+    for (let originRow = 0; originRow < board.length; originRow++) {
+        for (let originColumn = 0; originColumn < board[originRow].length; originColumn++) {
+            if (!board[originRow][originColumn].pieceOn)
+                continue;
+            for (let targetRow = 0; targetRow < board.length; targetRow++) {
+                for (let targetColumn = 0; targetColumn < board[targetRow].length; targetColumn++) {
+                    if (legalMove(board, { row: originRow, column: originColumn }, { row: targetRow, column: targetColumn }))
+                    {
+                       
+                        board[originRow][originColumn].pieceOn.canStartMovment = true;
+                    }
+                }
+            }
+        }
+    }
+}
+function updateAllPicesCantMove(board) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
-            if (!board[row][column].pieceOn)
-                continue;
-           
-            let targetRow = row + 1 * board[row][column].pieceOn.getMovmentFactor
-            let targetColRight = column + 1 >= board[targetRow].length ? null : column + 1;
-            let targetColLeft = column - 1 < 0 ? null : column - 1;
-            if (legalMove(board, { row, column }, { row: targetRow, column: targetColRight })
-                || legalMove(board, { row, column }, { row: targetRow, column: targetColLeft }))
-                board[row][column].pieceOn.canStartMovment = true;
-            else
+            {
+            if(board[row][column].pieceOn)
                 board[row][column].pieceOn.canStartMovment = false;
+                
+            }
+        }
+    }
+}
+function endMovment(event) {
+    
+    let locationArr = event.target.id.split("")
+    let targetlocation={row:locationArr[0],column:locationArr[1]}
+    let targetSquare = board[targetlocation.row][targetlocation.column]
+    let originSquare = board[startMovmentPoint.row][startMovmentPoint.column];
+    if (targetSquare && targetSquare.isPossibleEndMovment) {
+        if (Math.abs(targetlocation.row - startMovmentPoint.row) == 2)//handle eat piece
+        {
+            
+            let takeColumn = startMovmentPoint.column + (targetlocation.column > startMovmentPoint.column?1:-1);
+       
+            let takeRow = startMovmentPoint.row + 1 * originSquare.pieceOn.getMovmentFactor
+            console.log(takeRow,"    ",takeColumn)
+            board[takeRow][takeColumn].pieceOn = null
+            }
+        targetSquare.pieceOn = originSquare.pieceOn;
+        originSquare.pieceOn = null;
+        updatePicesCanMove(board)
+        updateAllSquaresNotPossibleMove(board)
+        updateBoardUi(board)
+    }
+}
+function updateAllSquaresNotPossibleMove(board) {
+    for (let row = 0; row < board.length; row++) {
+        for (let column = 0; column < board[row].length; column++) {
+            {
+            
+                board[row][column].isPossibleEndMovment = false;
+                
+            }
+    
         }
     }
 }
@@ -128,10 +176,9 @@ function updateBoardUi(board) {
             if (board[row][column].pieceOn) {
                 let piece = board[row][column].pieceOn;
                 pieceUi = document.createElement("span");
-                console.log(piece.id)
                 pieceUi.setAttribute("id", `${piece.id}`)//to connect between frontUI to back
-                pieceUi.addEventListener("click",startMovment)
-                pieceUi.setAttribute("class", board[row][column].pieceOn.getClassName(board,legalMove))
+                pieceUi.addEventListener("click", startMovment)
+                pieceUi.setAttribute("class", board[row][column].pieceOn.getClassName(board, legalMove))
             }
             if (row % 2 == 0) {
                 if (column % 2 == 0)
@@ -145,8 +192,9 @@ function updateBoardUi(board) {
                 else
                     squareUi.color = "white"
             }
-            squareUi.setAttribute("class", board[row][column].getClassNameByState(board,legalMove, "startMovment") + " " + squareUi.color);
-     
+            squareUi.setAttribute("class", board[row][column].getClassNameByState(board, legalMove, "startMovment") + " " + squareUi.color);
+            squareUi.id = `${row}${column}`
+            squareUi.addEventListener("click", endMovment)
             if (pieceUi) {
                 squareUi.appendChild(pieceUi)
             }
@@ -156,25 +204,33 @@ function updateBoardUi(board) {
         }
     }
 }
-function legalMove(board, originLocation, targetLocation)
-{
+function legalMove(board, originLocation, targetLocation) {
     let pieceMoving = board[originLocation.row][originLocation.column].pieceOn;
-    if (!pieceMoving)
-        return false;   
-    if (Math.abs(originLocation.row - targetLocation.row) == 1
+    if (!pieceMoving||board[targetLocation.row][targetLocation.column].pieceOn)
+        return false;
+    if ((pieceMoving.color == "gray" && originLocation.row < targetLocation.row)
+        ||(pieceMoving.color=="red"&&originLocation.row > targetLocation.row))
+        return false;
+    if (originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
         && Math.abs(originLocation.column - targetLocation.column) == 1
         && !board[targetLocation.row][targetLocation.column].pieceOn)//regular move
         return true;
    
-    if(Math.abs(originLocation.row - targetLocation.row) == 2)//eat move
+    if (Math.abs(originLocation.row - targetLocation.row) == 2)//eat move
     {
-        let rightLeftFactor = originLocation.column - targetLocation.column
-        if ((rightLeftFactor != -1 && rightLeftFactor != 1)||(originLocation.column+rightLeftFactor<0||originLocation.column+rightLeftFactor>=board.length))
+        let rightLeftFactor = ( targetLocation.column-originLocation.column ) / 2
+        // if(originLocation.row==4&&originLocation.column==7)
+        // console.log(`target \n row:${targetLocation.row}, column:${targetLocation.column}\n rightleftFactor ${rightLeftFactor}`)
+        if ((rightLeftFactor != -1 && rightLeftFactor != 1) || (originLocation.column + rightLeftFactor < 0 || originLocation.column + rightLeftFactor >= board.length))
             return false;
-        let eatSquare=board[originLocation.row+pieceMoving.getMovmentFactor][originLocation.column+rightLeftFactor]
+        let eatSquare = board[originLocation.row + pieceMoving.getMovmentFactor][originLocation.column + rightLeftFactor]
         if (eatSquare.pieceOn && eatSquare.pieceOn.color != pieceMoving.color)
+        {
+            if (originLocation.row == 4 && originLocation.column == 7)
+                console.log("eat square row",originLocation.row + pieceMoving.getMovmentFactor,"eatsquare col",originLocation.column + rightLeftFactor)
             return true;
+        }
         else
             return false;
-        }
-}  
+    }
+}
