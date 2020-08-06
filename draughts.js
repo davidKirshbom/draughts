@@ -9,16 +9,11 @@ class Square {
     isEnableEndMovment = function (originPosition, board) {
         
     };
-    getClassNameByState = function (board, leagalMoveFunc,originLocationOnMovment) {
+    getClassNameByState = function () {
         let className = "square ";
-        if (originLocationOnMovment)
             className += this.isPossibleEndMovment ? "endEnable" : "";
         return className
     }
-    // isEnableEndMovment(leagalMoveFunc, originPosition,board)
-    // {
-    //    return leagalMoveFunc(board, originPosition, this.position)   
-    // }
 }
 class Piece {
     constructor(row, column, color,id) {
@@ -34,7 +29,6 @@ class Piece {
     
     
 }
-        //function legalMove(originPosition,target)
 function generateStartBoard() {
     let board = [];
     let picesCount = 0;
@@ -59,56 +53,60 @@ function generateStartBoard() {
     updatePicesCanMove(board)
     return board;
 }
-        let board = generateStartBoard();
-        board.getConsolePrint = function () {
-            let resultBoard = [];
-            for (let row = 0; row < this.length; row++) {
-                let resultRow = [];
-                for (let col = 0; col < this[row].length; col++) {
-                    if (this[row][col].pieceOn)
-                        resultRow.push(this[row][col].pieceOn.color)
-                    else
-                        resultRow.push("EE")
-                }
-                resultBoard.push(resultRow);
-        
-            }
+let board = generateStartBoard();
+board.getConsolePrint = function () {
+    let resultBoard = [];
+    for (let row = 0; row < this.length; row++) {
+        let resultRow = [];
+        for (let col = 0; col < this[row].length; col++) {
+            if (this[row][col].pieceOn)
+                resultRow.push(this[row][col].pieceOn.color)
+            else
+                resultRow.push("EE")
         }
-        updateBoardUi(board);
-board.getConsolePrint();
-
+        resultBoard.push(resultRow);
+        
+    }
+}
+updateBoardUi(board);
 function startMovment(event)
 {
-    let startMovmentPoint = getPieceOnBoardById(board, event.target.getAttribute("id"))
-    updatePicesCanMove(board, true);//true-unable all pices
+    let startMovmentPoint = getPieceLocationOnBoardById(board, event.target.getAttribute("id"))
     updatepossibleSquaresToMove(board, startMovmentPoint);
     updateBoardUi(board);
     
 }
-function getPieceOnBoardById(board,id)
+function getPieceLocationOnBoardById(board,id)
 {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
-            if (board[row][column].pieceOn&&board[row][column].pieceOn.id == id)
-               return board[row][column].pieceOn
+            if (board[row][column].pieceOn && board[row][column].pieceOn.id == id)
+                return { row, column }
         }
     }
     return null;
 }
-function updatepossibleSquaresToMove(board,startMovmentPoint)
-{
-
+function updatepossibleSquaresToMove(board, startMovmentPoint) {
+    for (let row = 0; row < board.length; row++) {
+        for (let column = 0; column < board[row].length; column++) {
+            {
+                if (legalMove(board, startMovmentPoint, { row, column }))
+                    board[row][column].isPossibleEndMovment = true;
+                else {
+                
+                    board[row][column].isPossibleEndMovment = false;
+                }
+            }
+    
+        }
+    }
 }
-function updatePicesCanMove(board,unableAll) {
+function updatePicesCanMove(board) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             if (!board[row][column].pieceOn)
                 continue;
-            if (unableAll)
-            {
-                board[row][column].pieceOn.canStartMovment = false;
-                continue;
-                }
+           
             let targetRow = row + 1 * board[row][column].pieceOn.getMovmentFactor
             let targetColRight = column + 1 >= board[targetRow].length ? null : column + 1;
             let targetColLeft = column - 1 < 0 ? null : column - 1;
@@ -171,9 +169,9 @@ function legalMove(board, originLocation, targetLocation)
     if(Math.abs(originLocation.row - targetLocation.row) == 2)//eat move
     {
         let rightLeftFactor = originLocation.column - targetLocation.column
-        if (rightLeftFactor != -1 && rightLeftFactor != 1)
+        if ((rightLeftFactor != -1 && rightLeftFactor != 1)||(originLocation.column+rightLeftFactor<0||originLocation.column+rightLeftFactor>=board.length))
             return false;
-        let eatSquare=board[originLocation.row+pieceMoving.getMovmentFactor()][originLocation.column+rightLeftFactor]
+        let eatSquare=board[originLocation.row+pieceMoving.getMovmentFactor][originLocation.column+rightLeftFactor]
         if (eatSquare.pieceOn && eatSquare.pieceOn.color != pieceMoving.color)
             return true;
         else
