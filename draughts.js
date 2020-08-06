@@ -53,6 +53,7 @@ function generateStartBoard() {
     updatePicesCanMove(board)
     return board;
 }
+let picesInDanger=[]
 let board = generateStartBoard();
 board.getConsolePrint = function () {
     let resultBoard = [];
@@ -103,6 +104,7 @@ function updatepossibleSquaresToMove(board, startMovmentPoint,unpossibleAll) {
     }
 }
 function updatePicesCanMove(board) {
+    UpdatePicesInDanger(board)
     updateAllPicesCantMove(board)
     for (let originRow = 0; originRow < board.length; originRow++) {
         for (let originColumn = 0; originColumn < board[originRow].length; originColumn++) {
@@ -112,11 +114,41 @@ function updatePicesCanMove(board) {
                 for (let targetColumn = 0; targetColumn < board[targetRow].length; targetColumn++) {
                     if (legalMove(board, { row: originRow, column: originColumn }, { row: targetRow, column: targetColumn }))
                     {
-                       
+
                         board[originRow][originColumn].pieceOn.canStartMovment = true;
                     }
                 }
             }
+        }
+    }
+}
+
+function UpdatePicesInDanger(board)
+{
+    picesInDanger=[]
+    for (let originRow = 0; originRow < board.length; originRow++) {
+        for (let originColumn = 0; originColumn < board[originRow].length; originColumn++) {
+            if (!board[originRow][originColumn].pieceOn)
+                continue;
+            let pieceTryTake = board[originRow][originColumn].pieceOn;
+            let possibleTakeColumnLeft = originColumn - 1;
+            let  possibleTakeColumnRight = originColumn + 1;
+            let possibleTakeRow = originRow + 1 * pieceTryTake.getMovmentFactor
+            if (board[possibleTakeRow][possibleTakeColumnLeft]&&board[possibleTakeRow][possibleTakeColumnLeft].pieceOn
+                && legalMove(board, { row: originRow, column: originColumn }
+                                  , { row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnLeft - 1 }))//left)
+            {
+                picesInDanger.push(board[possibleTakeRow][possibleTakeColumnLeft].pieceOn)
+            }
+            else if(board[possibleTakeRow][possibleTakeColumnRight]&&board[possibleTakeRow][possibleTakeColumnRight].pieceOn
+                && legalMove(board, { row: originRow, column: originColumn }
+                                  , { row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnRight + 1 }))//right)
+            {
+                picesInDanger.push(board[possibleTakeRow][possibleTakeColumnRight].pieceOn)
+                console.log("try to take",possibleTakeColumnRight + 1)
+                }
+     
+         
         }
     }
 }
@@ -206,12 +238,13 @@ function updateBoardUi(board) {
 }
 function legalMove(board, originLocation, targetLocation) {
     let pieceMoving = board[originLocation.row][originLocation.column].pieceOn;
-    if (!pieceMoving||board[targetLocation.row][targetLocation.column].pieceOn)
+    if (!pieceMoving || (board[targetLocation.row][targetLocation.column] && board[targetLocation.row][targetLocation.column].pieceOn)
+    ||targetLocation.row<0||targetLocation.row>=board.length||targetLocation.column<0||targetLocation.column>=board[targetLocation.row].length)
         return false;
     if ((pieceMoving.color == "gray" && originLocation.row < targetLocation.row)
         ||(pieceMoving.color=="red"&&originLocation.row > targetLocation.row))
         return false;
-    if (originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
+    if (!picesInDanger.some((piece) => { return piece.color !== pieceMoving.color }) &&originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
         && Math.abs(originLocation.column - targetLocation.column) == 1
         && !board[targetLocation.row][targetLocation.column].pieceOn)//regular move
         return true;
