@@ -131,6 +131,7 @@ function updatePicesCanMove(board) {
 
 function UpdatePicesInDanger(board,currentTurnNewKings)
 {
+    if(currentTurnNewKings)
     currentTurnNewKings.forEach((king) => king.isKing = false)
     gameState.picesInDanger=[]
     for (let originRow = 0; originRow < board.length; originRow++) {
@@ -158,6 +159,7 @@ function UpdatePicesInDanger(board,currentTurnNewKings)
          
         } 
     }
+    if(currentTurnNewKings)
     currentTurnNewKings.forEach((king) => king.isKing = true)
 }
 function updateAllPicesCanNotMove(board) {
