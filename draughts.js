@@ -1,3 +1,5 @@
+const RED = "red";
+const GRAY="gray"
 class Square {
     constructor(piece, row, column) {
         this.position={row,column}
@@ -20,15 +22,15 @@ class Piece {
         this.position = { row, column }
         this.color = color;
         this.canStartMovment = false;
-        this.getMovmentFactor = color == "gray" ? -1 : 1;
+        this.getMovmentFactor = color == GRAY ? -1 : 1;
         this.id = id;
+        this.isKing = false;
     }
     getClassName(board,legalMoveFunc) {
-        return `piece ${this.color} ${this.canStartMovment ? "startEnable" : ""}`;
+        return `${this.isKing?"King ":""} piece ${this.color} ${this.canStartMovment ? "startEnable" : ""}`;
     }
-    
-    
 }
+
 function generateStartBoard() {
     let board = [];
     let picesCount = 0;
@@ -42,7 +44,7 @@ function generateStartBoard() {
                 if (row < 3)
                     pieceToAdd = new Piece(row, column, "red",picesCount++)
                 else if (row >= 5)
-                    pieceToAdd = new Piece(row, column, "gray", picesCount++)
+                    pieceToAdd = new Piece(row, column, GRAY, picesCount++)
                 
             }
             
@@ -53,21 +55,24 @@ function generateStartBoard() {
     updatePicesCanMove(board)
     return board;
 }
+let CurrentColorTurn = "red"
+let round=0
 let picesInDanger=[]
 let board = generateStartBoard();
-board.getConsolePrint = function () {
+getConsolePrint = function (board) {
     let resultBoard = [];
-    for (let row = 0; row < this.length; row++) {
+    for (let row = 0; row < board.length; row++) {
         let resultRow = [];
-        for (let col = 0; col < this[row].length; col++) {
-            if (this[row][col].pieceOn)
-                resultRow.push(this[row][col].pieceOn.color)
+        for (let col = 0; col < board[row].length; col++) {
+            if (board[row][col].pieceOn)
+                resultRow.push(board[row][col].pieceOn.color)
             else
                 resultRow.push("EE")
         }
         resultBoard.push(resultRow);
         
     }
+    console.log(resultBoard)
 }
 updateBoardUi(board);
 let startMovmentPoint;
@@ -88,7 +93,7 @@ function getPieceLocationOnBoardById(board,id)
     }
     return null;
 }
-function updatepossibleSquaresToMove(board, startMovmentPoint,unpossibleAll) {
+function updatepossibleSquaresToMove(board, startMovmentPoint) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             {
@@ -134,18 +139,18 @@ function UpdatePicesInDanger(board)
             let possibleTakeColumnLeft = originColumn - 1;
             let  possibleTakeColumnRight = originColumn + 1;
             let possibleTakeRow = originRow + 1 * pieceTryTake.getMovmentFactor
-            if (board[possibleTakeRow][possibleTakeColumnLeft]&&board[possibleTakeRow][possibleTakeColumnLeft].pieceOn
+            if (board[possibleTakeRow]&&board[possibleTakeRow][possibleTakeColumnLeft]&&board[possibleTakeRow][possibleTakeColumnLeft].pieceOn
                 && legalMove(board, { row: originRow, column: originColumn }
                                   , { row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnLeft - 1 }))//left)
             {
                 picesInDanger.push(board[possibleTakeRow][possibleTakeColumnLeft].pieceOn)
             }
-            else if(board[possibleTakeRow][possibleTakeColumnRight]&&board[possibleTakeRow][possibleTakeColumnRight].pieceOn
+            else if(board[possibleTakeRow]&&board[possibleTakeRow][possibleTakeColumnRight]&&board[possibleTakeRow][possibleTakeColumnRight].pieceOn
                 && legalMove(board, { row: originRow, column: originColumn }
                                   , { row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnRight + 1 }))//right)
             {
                 picesInDanger.push(board[possibleTakeRow][possibleTakeColumnRight].pieceOn)
-                console.log("try to take",possibleTakeColumnRight + 1)
+              
                 }
      
          
@@ -170,20 +175,31 @@ function endMovment(event) {
     let targetSquare = board[targetlocation.row][targetlocation.column]
     let originSquare = board[startMovmentPoint.row][startMovmentPoint.column];
     if (targetSquare && targetSquare.isPossibleEndMovment) {
-        if (Math.abs(targetlocation.row - startMovmentPoint.row) == 2)//handle eat piece
-        {
-            
-            let takeColumn = startMovmentPoint.column + (targetlocation.column > startMovmentPoint.column?1:-1);
-       
-            let takeRow = startMovmentPoint.row + 1 * originSquare.pieceOn.getMovmentFactor
-            console.log(takeRow,"    ",takeColumn)
-            board[takeRow][takeColumn].pieceOn = null
-            }
+         if (Math.abs(targetlocation.row - startMovmentPoint.row) >= 2)
+            {
+            let takeColumn = targetlocation.column - (targetlocation.column > startMovmentPoint.column?1:-1);
+            let takeRow = targetlocation.row -(startMovmentPoint.row < targetlocation.row ? 1 : -1)
+            if(board[takeRow][takeColumn].pieceOn)
+                board[takeRow][takeColumn].pieceOn = null
+        }
+        if ((originSquare.pieceOn.color == GRAY && targetlocation.row == 0)
+            || originSquare.pieceOn.color == RED && targetlocation.row == 7) {
+            console.log("new king")
+            originSquare.pieceOn.isKing = true;
+        }
         targetSquare.pieceOn = originSquare.pieceOn;
         originSquare.pieceOn = null;
+        if (isWin(board)&&round>0)
+        {
+            console.log("win!!!!!!!!")
+            return;
+        }
+        CurrentColorTurn = (CurrentColorTurn == RED ? GRAY : RED)
         updatePicesCanMove(board)
         updateAllSquaresNotPossibleMove(board)
         updateBoardUi(board)
+       
+        round++;
     }
 }
 function updateAllSquaresNotPossibleMove(board) {
@@ -208,6 +224,16 @@ function updateBoardUi(board) {
             if (board[row][column].pieceOn) {
                 let piece = board[row][column].pieceOn;
                 pieceUi = document.createElement("span");
+                if (piece.isKing)
+                {
+                    let crownImg = document.createElement("img")
+                    crownImg.src = "./img/crown.png"
+                   
+                    
+                  pieceUi.append(crownImg);
+                   
+                    
+                }
                 pieceUi.setAttribute("id", `${piece.id}`)//to connect between frontUI to back
                 pieceUi.addEventListener("click", startMovment)
                 pieceUi.setAttribute("class", board[row][column].pieceOn.getClassName(board, legalMove))
@@ -238,32 +264,91 @@ function updateBoardUi(board) {
 }
 function legalMove(board, originLocation, targetLocation) {
     let pieceMoving = board[originLocation.row][originLocation.column].pieceOn;
-    if (!pieceMoving || (board[targetLocation.row][targetLocation.column] && board[targetLocation.row][targetLocation.column].pieceOn)
-    ||targetLocation.row<0||targetLocation.row>=board.length||targetLocation.column<0||targetLocation.column>=board[targetLocation.row].length)
+    if (originLocation.row==4&&originLocation.column==7&&targetLocation.row==2&&targetLocation.column==5)
+    console.log( pieceMoving.color,"!=",CurrentColorTurn,"=",   pieceMoving.color!==CurrentColorTurn   )
+    if (!pieceMoving || targetLocation.row < 0 || targetLocation.row >= board.length || targetLocation.column < 0 || targetLocation.column >= board[targetLocation.row].length
+    ||pieceMoving.color!==CurrentColorTurn|| board[targetLocation.row][targetLocation.column].pieceOn)
         return false;
-    if ((pieceMoving.color == "gray" && originLocation.row < targetLocation.row)
-        ||(pieceMoving.color=="red"&&originLocation.row > targetLocation.row))
+       
+    if (pieceMoving.isKing)
+        return isLegalKingMove(board, originLocation, targetLocation).value
+        
+    if ((pieceMoving.color == GRAY && originLocation.row < targetLocation.row)
+        ||(pieceMoving.color==RED&&originLocation.row > targetLocation.row))
         return false;
+        
     if (!picesInDanger.some((piece) => { return piece.color !== pieceMoving.color }) &&originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
         && Math.abs(originLocation.column - targetLocation.column) == 1
         && !board[targetLocation.row][targetLocation.column].pieceOn)//regular move
         return true;
-   
-    if (Math.abs(originLocation.row - targetLocation.row) == 2)//eat move
+      
+    if (Math.abs(originLocation.row - targetLocation.row) === 2)//eat move
     {
-        let rightLeftFactor = ( targetLocation.column-originLocation.column ) / 2
+       
+        let rightLeftFactor = (targetLocation.column - originLocation.column) / 2
+        
         // if(originLocation.row==4&&originLocation.column==7)
         // console.log(`target \n row:${targetLocation.row}, column:${targetLocation.column}\n rightleftFactor ${rightLeftFactor}`)
         if ((rightLeftFactor != -1 && rightLeftFactor != 1) || (originLocation.column + rightLeftFactor < 0 || originLocation.column + rightLeftFactor >= board.length))
             return false;
         let eatSquare = board[originLocation.row + pieceMoving.getMovmentFactor][originLocation.column + rightLeftFactor]
+        
         if (eatSquare.pieceOn && eatSquare.pieceOn.color != pieceMoving.color)
         {
-            if (originLocation.row == 4 && originLocation.column == 7)
-                console.log("eat square row",originLocation.row + pieceMoving.getMovmentFactor,"eatsquare col",originLocation.column + rightLeftFactor)
             return true;
         }
         else
             return false;
     }
+    
 }
+board[5][2].pieceOn.isKing = true;
+function isLegalKingMove(board, originLocation, targetLocation) {
+    if (!board[originLocation.row][originLocation.column].pieceOn
+        || !board[originLocation.row][originLocation.column].pieceOn.isKing)
+        return false;
+    if (originLocation.row - originLocation.column != targetLocation.row - targetLocation.column
+        && originLocation.row + originLocation.column != targetLocation.row + targetLocation.column)
+        return false;
+    let columnFactor = originLocation.column > targetLocation.column ? -1 : 1;
+    let rowFactor = originLocation.row < targetLocation.row ? 1 : -1;
+    let numberOfRowsCheck = Math.abs(originLocation.row - targetLocation.row)
+    let numberOfColumnCheck = Math.abs(originLocation.column - targetLocation.column)
+    for (let rowOffset = 1, columnOffset = 1;columnOffset <= numberOfColumnCheck&& rowOffset <= numberOfRowsCheck;columnOffset++, rowOffset++) {
+            let rowToCheck = originLocation.row + rowOffset * rowFactor;
+            let colToCheck = originLocation.column + columnOffset * columnFactor;
+            if (board[rowToCheck][colToCheck].pieceOn) {
+               console.log("king can eat row ",rowToCheck," col ",colToCheck)
+                 if(rowToCheck+rowFactor==targetLocation.row&&colToCheck+columnFactor==targetLocation.column)
+                     return { value: true, eatPieceOnLoction: { row: rowToCheck, column: colToCheck } };
+                    else
+                     return { value: false };
+            }
+        }
+    return { value: true };    
+}
+function isWin(board)
+{
+    
+    CurrentColorTurn = CurrentColorTurn == RED ? GRAY : RED;
+    updatePicesCanMove(board);
+    let result = true;
+   
+    for (let row = 0; row < board.length; row++) {
+        for (let column = 0; column < board[row].length; column++) {
+            let pieceOnSquare = board[row][column].pieceOn
+           
+               //console.log(pieceOnSquare)
+            if (pieceOnSquare && pieceOnSquare.color === CurrentColorTurn && pieceOnSquare.canStartMovment)
+                result= false;
+        }
+    }
+    CurrentColorTurn = CurrentColorTurn == RED ? "grey" : RED;
+    
+    updatePicesCanMove(board);
+    return result;
+} 
+    
+
+
+
