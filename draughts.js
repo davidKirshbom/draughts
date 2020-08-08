@@ -1,21 +1,17 @@
 const RED = "red";
-const GRAY="gray"
+const GRAY = "gray";
 class Square {
     constructor(piece, row, column) {
-        this.position={row,column}
+        this.position = { row, column };
         this.pieceOn = piece;
         this.isPossibleEndMovment = false;
    
     }
-    
-    isEnableEndMovment = function (originPosition, board) {
-        
-    };
-    getClassNameByState = function () {
+    getClassNameByState  () {
         let className = "square ";
             className += this.isPossibleEndMovment ? "endEnable" : "";
         return className
-    }
+    } 
 }
 class Piece {
     constructor(row, column, color,id) {
@@ -29,9 +25,17 @@ class Piece {
     getClassName(board,legalMoveFunc) {
         return `${this.isKing?"King ":""} piece ${this.color} ${this.canStartMovment ? "startEnable" : ""}`;
     }
+  
+}
+let gameState = {
+    CurrentColorTurn: RED,
+    board : [],
+    picesInDanger:[],
+    roundsOnlyKingsMoveAndNoneTakenPiece:0,
+    boardHistory:[]
 }
 
-function generateStartBoard() {
+function generateStartBoard(){
     let board = [];
     let picesCount = 0;
     for (let row = 0; row < 8; row++) {
@@ -42,10 +46,10 @@ function generateStartBoard() {
             let pieceToAdd;
             if ((row + column) % 2 != 0) {
                 if (row < 3)
-                    pieceToAdd = new Piece(row, column, "red",picesCount++)
+                    pieceToAdd = new Piece(row, column, RED,picesCount++)
                 else if (row >= 5)
                     pieceToAdd = new Piece(row, column, GRAY, picesCount++)
-                
+               
             }
             
             rowArray.push(new Square(pieceToAdd))
@@ -55,54 +59,51 @@ function generateStartBoard() {
     updatePicesCanMove(board)
     return board;
 }
-let CurrentColorTurn = "red"
-let round=0
-let picesInDanger=[]
-let board = generateStartBoard();
-getConsolePrint = function (board) {
-    let resultBoard = [];
+
+gameState.board = generateStartBoard();
+function getBoardString(board) {
+    let resultBoard="" ;
     for (let row = 0; row < board.length; row++) {
-        let resultRow = [];
+        let resultRow="" ;
         for (let col = 0; col < board[row].length; col++) {
             if (board[row][col].pieceOn)
-                resultRow.push(board[row][col].pieceOn.color)
+                resultRow += board[row][col].pieceOn.id+""+board[row][col].pieceOn.isKing
             else
-                resultRow.push("EE")
+                resultRow += ("EE");
         }
-        resultBoard.push(resultRow);
+        resultBoard+=(resultRow+"\n");
         
     }
-    console.log(resultBoard)
+    return resultBoard
 }
-updateBoardUi(board);
+updateBoardUi(gameState.board);
 let startMovmentPoint;
 function startMovment(event)
 {
-    startMovmentPoint = getPieceLocationOnBoardById(board, event.target.getAttribute("id"))
-    updatepossibleSquaresToMove(board, startMovmentPoint);
-    updateBoardUi(board);
+    startMovmentPoint = getPieceLocationOnBoardById(gameState.board, event.target.getAttribute("id"))
+    updatepossibleSquaresToMove(gameState.board, startMovmentPoint);
+    updateBoardUi(gameState.board);
     
 }
-function getPieceLocationOnBoardById(board,id)
-{
-    for (let row = 0; row < board.length; row++) {
-        for (let column = 0; column < board[row].length; column++) {
-            if (board[row][column].pieceOn && board[row][column].pieceOn.id == id)
-                return { row, column }
+
+function getPieceLocationOnBoardById(board, id) {
+    
+        for (let row = 0; row < board.length; row++) {
+            for (let column = 0; column < board[row].length; column++) {
+                if (board[row][column].pieceOn && board[row][column].pieceOn.id == id)
+                    return { row, column }
+            }
         }
-    }
-    return null;
+        return null;
+    
+  
 }
+
 function updatepossibleSquaresToMove(board, startMovmentPoint) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             {
-                if (legalMove(board, startMovmentPoint, { row, column }))
-                    board[row][column].isPossibleEndMovment = true;
-                else {
-                
-                    board[row][column].isPossibleEndMovment = false;
-                }
+                board[row][column].isPossibleEndMovment = legalMove(board, startMovmentPoint, { row, column });
             }
     
         }
@@ -110,7 +111,7 @@ function updatepossibleSquaresToMove(board, startMovmentPoint) {
 }
 function updatePicesCanMove(board) {
     UpdatePicesInDanger(board)
-    updateAllPicesCantMove(board)
+    updateAllPicesCanNotMove(board)
     for (let originRow = 0; originRow < board.length; originRow++) {
         for (let originColumn = 0; originColumn < board[originRow].length; originColumn++) {
             if (!board[originRow][originColumn].pieceOn)
@@ -128,9 +129,10 @@ function updatePicesCanMove(board) {
     }
 }
 
-function UpdatePicesInDanger(board)
+function UpdatePicesInDanger(board,currentTurnNewKings)
 {
-    picesInDanger=[]
+    currentTurnNewKings.forEach((king) => king.isKing = false)
+    gameState.picesInDanger=[]
     for (let originRow = 0; originRow < board.length; originRow++) {
         for (let originColumn = 0; originColumn < board[originRow].length; originColumn++) {
             if (!board[originRow][originColumn].pieceOn)
@@ -143,21 +145,22 @@ function UpdatePicesInDanger(board)
                 && legalMove(board, { row: originRow, column: originColumn }
                                   , { row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnLeft - 1 }))//left)
             {
-                picesInDanger.push(board[possibleTakeRow][possibleTakeColumnLeft].pieceOn)
+                gameState.picesInDanger.push(board[possibleTakeRow][possibleTakeColumnLeft].pieceOn)
             }
             else if(board[possibleTakeRow]&&board[possibleTakeRow][possibleTakeColumnRight]&&board[possibleTakeRow][possibleTakeColumnRight].pieceOn
                 && legalMove(board, { row: originRow, column: originColumn }
                                   , { row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnRight + 1 }))//right)
             {
-                picesInDanger.push(board[possibleTakeRow][possibleTakeColumnRight].pieceOn)
+                gameState.picesInDanger.push(board[possibleTakeRow][possibleTakeColumnRight].pieceOn)
               
                 }
      
          
-        }
+        } 
     }
+    currentTurnNewKings.forEach((king) => king.isKing = true)
 }
-function updateAllPicesCantMove(board) {
+function updateAllPicesCanNotMove(board) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             {
@@ -168,39 +171,70 @@ function updateAllPicesCantMove(board) {
         }
     }
 }
+let currentTurnNewKings=[]
 function endMovment(event) {
-    
     let locationArr = event.target.id.split("")
-    let targetlocation={row:locationArr[0],column:locationArr[1]}
-    let targetSquare = board[targetlocation.row][targetlocation.column]
-    let originSquare = board[startMovmentPoint.row][startMovmentPoint.column];
+    let targetlocation = { row: locationArr[0], column: locationArr[1] }
+    if (!startMovment||locationArr.length<2)
+    return
+    let targetSquare = gameState.board[targetlocation.row][targetlocation.column]
+    let originSquare = gameState.board[startMovmentPoint.row][startMovmentPoint.column];
+    let takenPiece = false;
     if (targetSquare && targetSquare.isPossibleEndMovment) {
-         if (Math.abs(targetlocation.row - startMovmentPoint.row) >= 2)
-            {
-            let takeColumn = targetlocation.column - (targetlocation.column > startMovmentPoint.column?1:-1);
-            let takeRow = targetlocation.row -(startMovmentPoint.row < targetlocation.row ? 1 : -1)
-            if(board[takeRow][takeColumn].pieceOn)
-                board[takeRow][takeColumn].pieceOn = null
+        if (Math.abs(targetlocation.row - startMovmentPoint.row) >= 2) {
+            handleCapture(targetlocation)
         }
-        if ((originSquare.pieceOn.color == GRAY && targetlocation.row == 0)
-            || originSquare.pieceOn.color == RED && targetlocation.row == 7) {
-            console.log("new king")
-            originSquare.pieceOn.isKing = true;
+        if (originSquare.pieceOn&&((originSquare.pieceOn.color == GRAY && targetlocation.row == 0)
+            || originSquare.pieceOn.color == RED && targetlocation.row == 7)) {
+            CrownPiece(originSquare.pieceOn)
         }
+        gameState.boardHistory.push(getBoardString(gameState.board))
         targetSquare.pieceOn = originSquare.pieceOn;
         originSquare.pieceOn = null;
-        if (isWin(board)&&round>0)
+        if (isWin(gameState.board))
         {
             console.log("win!!!!!!!!")
             return;
         }
-        CurrentColorTurn = (CurrentColorTurn == RED ? GRAY : RED)
-        updatePicesCanMove(board)
-        updateAllSquaresNotPossibleMove(board)
-        updateBoardUi(board)
-       
-        round++;
+        UpdatePicesInDanger(gameState.board,currentTurnNewKings);
+        if (gameState.picesInDanger.length == 0) {
+            handleDraw(targetSquare,takenPiece)
+            PassTurn();
+        }
+      
     }
+}
+function PassTurn() {
+    gameState.CurrentColorTurn = (gameState.CurrentColorTurn == RED ? GRAY : RED)
+            updatePicesCanMove(gameState.board)
+            updateAllSquaresNotPossibleMove(gameState.board)
+            updateBoardUi(gameState.board)
+}
+function handleCapture(targetlocation)
+{
+    let takeColumn = targetlocation.column - (targetlocation.column > startMovmentPoint.column?1:-1);
+    let takeRow = targetlocation.row -(startMovmentPoint.row < targetlocation.row ? 1 : -1)
+     if (gameState.board[takeRow][takeColumn].pieceOn) {
+        gameState.board[takeRow][takeColumn].pieceOn = null
+         takenPiece = true;
+     }
+}
+function handleDraw(targetSquare, capturePieceOnTurn) {
+    if (targetSquare.pieceOn && targetSquare.pieceOn.isKing && !capturePieceOnTurn)
+        gameState.roundsOnlyKingsMoveAndNoneTakenPiece++
+    else
+        gameState.roundsOnlyKingsMoveAndNoneTakenPiece = 0;
+
+    if (gameState.boardHistory.filter((board) => board === currentBoardString).length === 3
+        || gameState.roundsOnlyKingsMoveAndNoneTakenPiece === 20) {
+        console.log("tie!!!!")
+        return true;
+    }
+    return false;
+}
+function CrownPiece(piece) {
+    piece.isKing = true;
+    currentTurnNewKings.push(originSquare.pieceOn)
 }
 function updateAllSquaresNotPossibleMove(board) {
     for (let row = 0; row < board.length; row++) {
@@ -264,10 +298,9 @@ function updateBoardUi(board) {
 }
 function legalMove(board, originLocation, targetLocation) {
     let pieceMoving = board[originLocation.row][originLocation.column].pieceOn;
-    if (originLocation.row==4&&originLocation.column==7&&targetLocation.row==2&&targetLocation.column==5)
-    console.log( pieceMoving.color,"!=",CurrentColorTurn,"=",   pieceMoving.color!==CurrentColorTurn   )
+ 
     if (!pieceMoving || targetLocation.row < 0 || targetLocation.row >= board.length || targetLocation.column < 0 || targetLocation.column >= board[targetLocation.row].length
-    ||pieceMoving.color!==CurrentColorTurn|| board[targetLocation.row][targetLocation.column].pieceOn)
+    ||pieceMoving.color!==gameState.CurrentColorTurn|| board[targetLocation.row][targetLocation.column].pieceOn)
         return false;
        
     if (pieceMoving.isKing)
@@ -276,33 +309,29 @@ function legalMove(board, originLocation, targetLocation) {
     if ((pieceMoving.color == GRAY && originLocation.row < targetLocation.row)
         ||(pieceMoving.color==RED&&originLocation.row > targetLocation.row))
         return false;
-        
-    if (!picesInDanger.some((piece) => { return piece.color !== pieceMoving.color }) &&originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
-        && Math.abs(originLocation.column - targetLocation.column) == 1
-        && !board[targetLocation.row][targetLocation.column].pieceOn)//regular move
-        return true;
-      
+    let isRegularMove=!gameState.picesInDanger.some((piece) => { return piece.color !== pieceMoving.color })
+                        && originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
+                        && Math.abs(originLocation.column - targetLocation.column) == 1
+    return (isRegularMove||isLegalCaptureMove(board,originLocation,targetLocation))
+}
+
+function isLegalCaptureMove(board, originLocation, targetLocation)
+{
+    if (!board[originLocation.row][originLocation.column].pieceOn)
+        return false
+    let pieceMoving = board[originLocation.row][originLocation.column].pieceOn;
     if (Math.abs(originLocation.row - targetLocation.row) === 2)//eat move
     {
-       
         let rightLeftFactor = (targetLocation.column - originLocation.column) / 2
-        
-        // if(originLocation.row==4&&originLocation.column==7)
-        // console.log(`target \n row:${targetLocation.row}, column:${targetLocation.column}\n rightleftFactor ${rightLeftFactor}`)
         if ((rightLeftFactor != -1 && rightLeftFactor != 1) || (originLocation.column + rightLeftFactor < 0 || originLocation.column + rightLeftFactor >= board.length))
             return false;
         let eatSquare = board[originLocation.row + pieceMoving.getMovmentFactor][originLocation.column + rightLeftFactor]
         
-        if (eatSquare.pieceOn && eatSquare.pieceOn.color != pieceMoving.color)
-        {
-            return true;
-        }
-        else
-            return false;
+        return (eatSquare.pieceOn && eatSquare.pieceOn.color != pieceMoving.color)
+       
     }
-    
+    return false;
 }
-board[5][2].pieceOn.isKing = true;
 function isLegalKingMove(board, originLocation, targetLocation) {
     if (!board[originLocation.row][originLocation.column].pieceOn
         || !board[originLocation.row][originLocation.column].pieceOn.isKing)
@@ -318,8 +347,7 @@ function isLegalKingMove(board, originLocation, targetLocation) {
             let rowToCheck = originLocation.row + rowOffset * rowFactor;
             let colToCheck = originLocation.column + columnOffset * columnFactor;
             if (board[rowToCheck][colToCheck].pieceOn) {
-               console.log("king can eat row ",rowToCheck," col ",colToCheck)
-                 if(rowToCheck+rowFactor==targetLocation.row&&colToCheck+columnFactor==targetLocation.column)
+                 if(rowToCheck+rowFactor==targetLocation.row&&colToCheck+columnFactor==targetLocation.column&&board[rowToCheck][colToCheck].pieceOn.color!=gameState.CurrentColorTurn)
                      return { value: true, eatPieceOnLoction: { row: rowToCheck, column: colToCheck } };
                     else
                      return { value: false };
@@ -330,7 +358,7 @@ function isLegalKingMove(board, originLocation, targetLocation) {
 function isWin(board)
 {
     
-    CurrentColorTurn = CurrentColorTurn == RED ? GRAY : RED;
+    gameState.CurrentColorTurn = gameState.CurrentColorTurn == RED ? GRAY : RED;
     updatePicesCanMove(board);
     let result = true;
    
@@ -339,11 +367,11 @@ function isWin(board)
             let pieceOnSquare = board[row][column].pieceOn
            
                //console.log(pieceOnSquare)
-            if (pieceOnSquare && pieceOnSquare.color === CurrentColorTurn && pieceOnSquare.canStartMovment)
+            if (pieceOnSquare && pieceOnSquare.color === gameState.CurrentColorTurn && pieceOnSquare.canStartMovment)
                 result= false;
         }
     }
-    CurrentColorTurn = CurrentColorTurn == RED ? "grey" : RED;
+    gameState.CurrentColorTurn = gameState.CurrentColorTurn == RED ? "grey" : RED;
     
     updatePicesCanMove(board);
     return result;
