@@ -1,40 +1,25 @@
 const RED = "red";
 const GRAY = "gray";
-class Square {
-    constructor(piece, row, column) {
-        this.position = { row, column };
-        this.pieceOn = piece;
-        this.isPossibleEndMovment = false;
-   
-    }
-    getClassNameByState  () {
-        let className = "square ";
-            className += this.isPossibleEndMovment ? "endEnable" : "";
-        return className
-    } 
-}
-class Piece {
-    constructor(row, column, color,id) {
-        this.position = { row, column }
-        this.color = color;
-        this.canStartMovment = false;
-        this.getMovmentFactor = color == GRAY ? -1 : 1;
-        this.id = id;
-        this.isKing = false;
-    }
-    getClassName(board,legalMoveFunc) {
-        return `${this.isKing?"King ":""} piece ${this.color} ${this.canStartMovment ? "startEnable" : ""}`;
-    }
-  
-}
+let currentTurnNewKings=[]
 let gameState = {
     CurrentColorTurn: RED,
     board : [],
     picesInDanger:[],
     roundsOnlyKingsMoveAndNoneTakenPiece:0,
-    boardHistory:[]
+    boardHistory: [],
+    startMovmentPoint: {},
+    restart: function () {
+        this.CurrentColorTurn = RED
+        this.board = generateStartBoard()
+        this.picesInDanger = []
+        this.roundsOnlyKingsMoveAndNoneTakenPiece = 0
+        this.boardHistory = []
+        this.startMovmentPoint = {}
+       
+    }
 }
-
+gameState.restart();
+updateBoardUi(gameState.board);
 function generateStartBoard(){
     let board = [];
     let picesCount = 0;
@@ -59,8 +44,6 @@ function generateStartBoard(){
     updatePicesCanMove(board)
     return board;
 }
-
-gameState.board = generateStartBoard();
 function getBoardString(board) {
     let resultBoard="" ;
     for (let row = 0; row < board.length; row++) {
@@ -76,29 +59,6 @@ function getBoardString(board) {
     }
     return resultBoard
 }
-updateBoardUi(gameState.board);
-let startMovmentPoint;
-function startMovment(event)
-{
-    startMovmentPoint = getPieceLocationOnBoardById(gameState.board, event.target.getAttribute("id"))
-    updatepossibleSquaresToMove(gameState.board, startMovmentPoint);
-    updateBoardUi(gameState.board);
-    
-}
-
-function getPieceLocationOnBoardById(board, id) {
-    
-        for (let row = 0; row < board.length; row++) {
-            for (let column = 0; column < board[row].length; column++) {
-                if (board[row][column].pieceOn && board[row][column].pieceOn.id == id)
-                    return { row, column }
-            }
-        }
-        return null;
-    
-  
-}
-
 function updatepossibleSquaresToMove(board, startMovmentPoint) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
@@ -128,7 +88,6 @@ function updatePicesCanMove(board) {
         }
     }
 }
-
 function UpdatePicesInDanger(board,currentTurnNewKings)
 {
     if(currentTurnNewKings)
@@ -173,18 +132,21 @@ function updateAllPicesCanNotMove(board) {
         }
     }
 }
-let currentTurnNewKings=[]
-function endMovment(event) {
-    let locationArr = event.target.id.split("")
-    let targetlocation = { row: locationArr[0], column: locationArr[1] }
-    if (!startMovment||locationArr.length<2)
-    return
+function startMovment(startMovmentPoint)
+{
+    gameState.startMovmentPoint = startMovmentPoint
+    updatepossibleSquaresToMove(gameState.board, gameState.startMovmentPoint);
+    updateBoardUi(gameState.board);
+}
+function endMovment(targetlocation) {
+    if (!gameState.startMovmentPoint)
+        return
+    let isCapturePiece = false;
     let targetSquare = gameState.board[targetlocation.row][targetlocation.column]
-    let originSquare = gameState.board[startMovmentPoint.row][startMovmentPoint.column];
-    let takenPiece = false;
+    let originSquare = gameState.board[gameState.startMovmentPoint.row][gameState.startMovmentPoint.column];
     if (targetSquare && targetSquare.isPossibleEndMovment) {
-        if (Math.abs(targetlocation.row - startMovmentPoint.row) >= 2) {
-            handleCapture(targetlocation)
+        if (Math.abs(targetlocation.row - gameState.startMovmentPoint.row) >= 2) {
+            isCapturePiece= handleCapture(targetlocation)
         }
         if (originSquare.pieceOn&&((originSquare.pieceOn.color == GRAY && targetlocation.row == 0)
             || originSquare.pieceOn.color == RED && targetlocation.row == 7)) {
@@ -193,16 +155,7 @@ function endMovment(event) {
         gameState.boardHistory.push(getBoardString(gameState.board))
         targetSquare.pieceOn = originSquare.pieceOn;
         originSquare.pieceOn = null;
-        if (isWin(gameState.board))
-        {
-            console.log("win!!!!!!!!")
-            return;
-        }
-        UpdatePicesInDanger(gameState.board,currentTurnNewKings);
-        if (gameState.picesInDanger.length == 0) {
-            handleDraw(targetSquare,takenPiece)
-            PassTurn();
-        }
+        afterMovmentChecks(targetlocation,isCapturePiece)
       
     }
 }
@@ -210,33 +163,73 @@ function PassTurn() {
     gameState.CurrentColorTurn = (gameState.CurrentColorTurn == RED ? GRAY : RED)
             updatePicesCanMove(gameState.board)
             updateAllSquaresNotPossibleMove(gameState.board)
-            updateBoardUi(gameState.board)
+    updateBoardUi(gameState.board)
+    currentTurnNewKings = []
+    gameState.startMovmentPoint = {}
+}
+function afterMovmentChecks(loactionMoveTo,isCapturePiece)
+{
+    if (isWin(gameState.board))
+    {
+        showRestartPrompt(gameState.CurrentColorTurn +"won")
+        return;
+    }
+   
+    updatepossibleSquaresToMove(gameState.board)
+    UpdatePicesInDanger(gameState.board,currentTurnNewKings);
+    if (!isInAreaPieceIndanger(gameState.board,loactionMoveTo)||!isCapturePiece) {
+        handleDraw(gameState.board[loactionMoveTo.row][loactionMoveTo.column])
+        
+        PassTurn();
+    }
+    else
+        updateBoardUi(gameState.board);
+}
+function isInAreaPieceIndanger(board,currentLocation)
+{
+    
+    UpdatePicesInDanger(board,currentTurnNewKings)
+    let startRow = currentLocation.row - 1 < 0 ? 0 : currentLocation.row - 1;
+    let endRow = (currentLocation.row + 1 >= board.length )? board.length - 1 : currentLocation.row + 1;
+    let startColumn = currentLocation.column - 1 < 0 ? 0 : currentLocation.column - 1;
+    let endColumn = (currentLocation.column + 1 >= board.length )? board.length-1 : currentLocation.column + 1;
+    for (let row = startRow;row <= endRow; row++)
+        for (let column = startColumn; column <= endColumn; column++)
+        {
+            if (gameState.picesInDanger.some((piece) => piece.equals(board[row][column].pieceOn)))
+                return true;
+        }
+    return false;
+
 }
 function handleCapture(targetlocation)
 {
-    let takeColumn = targetlocation.column - (targetlocation.column > startMovmentPoint.column?1:-1);
-    let takeRow = targetlocation.row -(startMovmentPoint.row < targetlocation.row ? 1 : -1)
+    let takeColumn = targetlocation.column - (targetlocation.column > gameState.startMovmentPoint.column?1:-1);
+    let takeRow = targetlocation.row -(gameState.startMovmentPoint.row < targetlocation.row ? 1 : -1)
      if (gameState.board[takeRow][takeColumn].pieceOn) {
         gameState.board[takeRow][takeColumn].pieceOn = null
-         takenPiece = true;
-     }
+         gameState.roundsOnlyKingsMoveAndNoneTakenPiece = 0;
+         gameState.boardHistory=[]//after take a piece will the state until no will not repeat
+         return true;
+    }
+    return false;
 }
-function handleDraw(targetSquare, capturePieceOnTurn) {
-    if (targetSquare.pieceOn && targetSquare.pieceOn.isKing && !capturePieceOnTurn)
+function handleDraw(targetSquare) {
+    if (targetSquare.pieceOn && targetSquare.pieceOn.isKing )
         gameState.roundsOnlyKingsMoveAndNoneTakenPiece++
     else
         gameState.roundsOnlyKingsMoveAndNoneTakenPiece = 0;
-
-    if (gameState.boardHistory.filter((board) => board === currentBoardString).length === 3
+    let lastBordHistory=gameState.boardHistory[gameState.boardHistory.length-1]
+    if (gameState.boardHistory.filter((board) => board === lastBordHistory ).length === 3
         || gameState.roundsOnlyKingsMoveAndNoneTakenPiece === 20) {
-        console.log("tie!!!!")
+        showRestartPrompt("it's a draw")
         return true;
     }
     return false;
 }
 function CrownPiece(piece) {
     piece.isKing = true;
-    currentTurnNewKings.push(originSquare.pieceOn)
+    currentTurnNewKings.push(piece)
 }
 function updateAllSquaresNotPossibleMove(board) {
     for (let row = 0; row < board.length; row++) {
@@ -250,55 +243,9 @@ function updateAllSquaresNotPossibleMove(board) {
         }
     }
 }
-function updateBoardUi(board) {
-    let boardUi = document.getElementsByClassName("board")[0]
-    boardUi.innerHTML = "";
-    for (let row = 0; row < board.length; row++) {
-        for (let column = 0; column < board[row].length; column++) {
-            let squareUi = document.createElement("div");
-            let pieceUi;
-            if (board[row][column].pieceOn) {
-                let piece = board[row][column].pieceOn;
-                pieceUi = document.createElement("span");
-                if (piece.isKing)
-                {
-                    let crownImg = document.createElement("img")
-                    crownImg.src = "./img/crown.png"
-                   
-                    
-                  pieceUi.append(crownImg);
-                   
-                    
-                }
-                pieceUi.setAttribute("id", `${piece.id}`)//to connect between frontUI to back
-                pieceUi.addEventListener("click", startMovment)
-                pieceUi.setAttribute("class", board[row][column].pieceOn.getClassName(board, legalMove))
-            }
-            if (row % 2 == 0) {
-                if (column % 2 == 0)
-                    squareUi.color = "white"
-                else
-                    squareUi.color = "black"
-            }
-            else {
-                if (column % 2 == 0)
-                    squareUi.color = "black"
-                else
-                    squareUi.color = "white"
-            }
-            squareUi.setAttribute("class", board[row][column].getClassNameByState(board, legalMove, "startMovment") + " " + squareUi.color);
-            squareUi.id = `${row}${column}`
-            squareUi.addEventListener("click", endMovment)
-            if (pieceUi) {
-                squareUi.appendChild(pieceUi)
-            }
-            squareUi.style.gridRow = `${row + 1}/${row + 2}`
-            squareUi.style.gridColumn = `${column + 1}/${column + 2}`
-            boardUi.appendChild(squareUi);
-        }
-    }
-}
 function legalMove(board, originLocation, targetLocation) {
+    if (!originLocation || !targetLocation)
+        return false;
     let pieceMoving = board[originLocation.row][originLocation.column].pieceOn;
  
     if (!pieceMoving || targetLocation.row < 0 || targetLocation.row >= board.length || targetLocation.column < 0 || targetLocation.column >= board[targetLocation.row].length
@@ -306,7 +253,7 @@ function legalMove(board, originLocation, targetLocation) {
         return false;
        
     if (pieceMoving.isKing)
-        return isLegalKingMove(board, originLocation, targetLocation).value
+        return isLegalKingMove(board, originLocation, targetLocation)
         
     if ((pieceMoving.color == GRAY && originLocation.row < targetLocation.row)
         ||(pieceMoving.color==RED&&originLocation.row > targetLocation.row))
@@ -316,7 +263,6 @@ function legalMove(board, originLocation, targetLocation) {
                         && Math.abs(originLocation.column - targetLocation.column) == 1
     return (isRegularMove||isLegalCaptureMove(board,originLocation,targetLocation))
 }
-
 function isLegalCaptureMove(board, originLocation, targetLocation)
 {
     if (!board[originLocation.row][originLocation.column].pieceOn)
@@ -341,21 +287,51 @@ function isLegalKingMove(board, originLocation, targetLocation) {
     if (originLocation.row - originLocation.column != targetLocation.row - targetLocation.column
         && originLocation.row + originLocation.column != targetLocation.row + targetLocation.column)
         return false;
+    let isPathLegal=isLegalKingPath(board,originLocation,targetLocation)
+    if (!isPathLegal.value)
+        return false;
+    if (isPathLegal.eatPieceOnLoction)
+        return true
+   
+    if (isInAreaPieceIndanger(board,targetLocation)||gameState.picesInDanger.length>0)//no capture move
+        return false   
+    else
+        return true
+}
+function isLegalKingPath(board,originLocation,targetLocation)
+{
+    if (board[targetLocation.row][targetLocation.column].pieceOn)
+        return { value: false }
+    if (targetLocation.row - targetLocation.column !== originLocation.row - originLocation.column &&
+        targetLocation.row + targetLocation.column !== originLocation.row + originLocation.column)
+        return { value: false }
+
     let columnFactor = originLocation.column > targetLocation.column ? -1 : 1;
     let rowFactor = originLocation.row < targetLocation.row ? 1 : -1;
     let numberOfRowsCheck = Math.abs(originLocation.row - targetLocation.row)
     let numberOfColumnCheck = Math.abs(originLocation.column - targetLocation.column)
     for (let rowOffset = 1, columnOffset = 1;columnOffset <= numberOfColumnCheck&& rowOffset <= numberOfRowsCheck;columnOffset++, rowOffset++) {
             let rowToCheck = originLocation.row + rowOffset * rowFactor;
-            let colToCheck = originLocation.column + columnOffset * columnFactor;
+        let colToCheck = originLocation.column + columnOffset * columnFactor;
+        if (board[rowToCheck][colToCheck].pieceOn &&board[rowToCheck][colToCheck].pieceOn.color === gameState.CurrentColorTurn)
+            return {value:false}
             if (board[rowToCheck][colToCheck].pieceOn) {
                  if(rowToCheck+rowFactor==targetLocation.row&&colToCheck+columnFactor==targetLocation.column&&board[rowToCheck][colToCheck].pieceOn.color!=gameState.CurrentColorTurn)
                      return { value: true, eatPieceOnLoction: { row: rowToCheck, column: colToCheck } };
-                    else
-                     return { value: false };
+                  else return {value:false} 
             }
+    }
+    return {value:true}
+}
+function isKingThreates(board, kingLocation)
+{
+    for (let row = 0; row < board.length; row++) {
+        for (let column = 0; column < board[row].length; column++) {
+            if (isLegalKingPath(board,kingLocation,{row,column}).eatPieceOnLoction)
+                return true;
         }
-    return { value: true };    
+    }
+    return false;
 }
 function isWin(board)
 {
@@ -373,12 +349,12 @@ function isWin(board)
                 result= false;
         }
     }
-    gameState.CurrentColorTurn = gameState.CurrentColorTurn == RED ? "grey" : RED;
+    gameState.CurrentColorTurn = gameState.CurrentColorTurn == RED ? GRAY : RED;
     
     updatePicesCanMove(board);
     return result;
 } 
-    
+
 
 
 

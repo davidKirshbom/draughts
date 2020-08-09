@@ -55,3 +55,30 @@ img{
     width: 2rem;
     align-self: center;
 }
+.popPrompt
+{
+background: blue;
+height: 10rem;
+width: 20rem;
+grid-row: 4/6;
+grid-column: 3/7;
+display: flex;
+flex-wrap: wrap;
+justify-content: center;
+}
+.unVisibale
+{
+    visibility: hidden;
+}
+.restartbutton
+{
+
+height: 5rem;
+width: 8rem;
+}
+.popPrompt>p{
+    width: 100%;
+    color: palegreen;
+    display: block;
+    text-align: center;
+}
