@@ -15,12 +15,14 @@ function getPieceLocationOnBoardById(board, id) {
 }
 function finishMovment(event) {
     let locationArr = event.target.id.split("")
+    if (locationArr.length < 2)
+        return;
     let targetlocation = { row: parseInt(locationArr[0]), column:parseInt(locationArr[1]) }
     endMovment(targetlocation)
 }
 function showRestartPrompt(message)
 {
-    let promptUi = document.getElementsByClassName("popPrompt unVisibale")[0]
+    let promptUi = document.getElementById("popPrompt")
     promptUi.getElementById("promptText").innerText = message +",\n To restart press the button";
     promptUi.className = "popPrompt"
     let restartButton = promptUi.getElementById("restartButton")

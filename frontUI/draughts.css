@@ -1,10 +1,51 @@
+body{
+   margin: 0 0 0 0; 
+   height: auto;
+}
+.hader{
+    width: 100%;
+    background: #8fcb9b;
+display: block;
+margin: 0 0 0 0;
+font-size: 7rem;
+text-align: center;
+
+}
+.game_container
+{
+    
+display: flex;
+flex-wrap: wrap;
+justify-content: center;
+background:  #92dce5;
+
+}
+#instructions
+{
+    background: #ffcf99;
+    margin: 2rem .2rem 0 .2rem;
+    font-size: 2rem;
+    border-radius: 2%;
+    padding-bottom: 2rem;
+}
+.title{
+    font-size: 6rem;
+    font-style: italic;
+    text-decoration: underline;
+}
+.sub_title
+{
+    font-size: 4rem;
+}
 .board{
 display: grid;
 grid-auto-rows: 5rem;
 grid-auto-columns: 5rem;
-
 align-items: center;
 justify-items: center;
+margin-top: 2rem;
+border: 4rem solid #f09d51;
+border-radius: 10%;
 }
 .white
 {
@@ -31,9 +72,10 @@ justify-items: center;
     align-content: center;
     justify-content: center;
 }
-.endEnable
+.endEnable:hover
 {
-    border: .5rem solid salmon;
+    opacity: 40%;
+    
 }
 .piece
 {
@@ -44,10 +86,15 @@ justify-items: center;
     display: flex;
     align-content: center;    
     justify-content: center;
+    opacity: 80%;
 }
 .startEnable
 {
-    border: .5rem solid blue;
+    opacity:100%;
+}
+.startEnable:hover
+{
+    opacity:60%;
 }
 img{
     background: transparent;
