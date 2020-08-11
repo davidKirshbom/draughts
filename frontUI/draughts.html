@@ -14,32 +14,40 @@
       <!-- <script src="./createBoard.js"></script> -->
       <script src="../logic/piece.js"></script>
       <script src="../logic/square.js"></script>
+    
+      <script src="../logic/draughts.js" ></script>
       <script src="draughtsUI.js"></script>
-      <script src="../logic/draughts.js"></script>
       </script>
-      <div id="popPrompt" class="popPrompt unVisibale">
+      <!-- <div id="popPrompt" class="popPrompt ">
         <p id="promptText">press the button for restart</p> 
          <button id="restartButton" class="restartbutton">restart</button> 
-    </div>
+    </div> -->
    </div>
-   <p >
        <div id="instructions">
            <span class="title">instructions</span><br>
       <span class="sub_title">Move</span><br>
-        -Men move one square diagonally forward<br>
-        -King move diagonally forward or backward any number of positions<br>
+      <ul>
+        <li>Men move one square diagonally forward</li>
+        <li>King move diagonally forward or backward any number of positions</li>
+    </ul>
         <span class="sub_title">Capture</span><br>
-        -Captures are mandatory,when a man is found adjacent to an opposing piece behind which is an empty position, the player must attain this empty position and remove the opposing man from the board.<br>
-        -Should a player be able to capture either with a man or a king, he must do so with the king.<br>
-        -If multiple captures are possible, the player may choose between capturing one piece or the entire line; the capture of a partial line is not permitted. If multiple captures are performed<br>
-        -Players cannot capture their own pieces<br>
+        <ul>
+        <li>Should a player be able to capture either with a man or a king, he must do so with the king.</li>
+        <li> multiple captures are possible, 
+            the player may choose between capturing one piece or the entire line;
+             the capture of a partial line is not permitted. If multiple captures are performed</li>
+        <li> cannot capture their own pieces</li>
+    </ul>
         <span class="sub_title">End game</span><br>
-        -A player with no valid move remaining loses. This occurs if the player has no pieces left, or if all the player's pieces are obstructed from moving by opponent pieces<br>
-        -The game is considered a draw when the same position repeats itself for the third time (not necessarily consecutive)<br>
-        -If, during 25 moves, there were only king movements, without piece movements or jumps, the game is considered a draw<br>
-
+        <ul>
+        <li> player with no valid move remaining loses. This occurs if the player has no pieces left, or if all the player's pieces are obstructed from moving by opponent pieces</li>
+        <li>The game is considered a draw when the same position repeats itself for the third time (not necessarily consecutive)</li>
+        <li>If, during 25 moves, there were only king movements, without piece movements or jumps, the game is considered a draw</li>
+        </ul>
        </div>
-   </p>
+   
+    </div>
+    <div id="signature"> created by David Kirshbom</div>
 </div> 
  
 

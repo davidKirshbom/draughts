@@ -6,10 +6,10 @@ class Piece {
         this.getMovmentFactor = color == GRAY ? -1 : 1;
         this.id = id;
         this.isKing = false;
-       
+        this.selected = false;
     }
-    getClassName(board,legalMoveFunc) {
-        return `${this.isKing?"King ":""} piece ${this.color} ${this.canStartMovment ? "startEnable" : ""}`;
+    getClassName() {
+        return `${this.isKing?"King ":""} piece ${this.color} ${this.canStartMovment ? "startEnable" : ""} ${this.selected?"selected":""}`;
     }
     equals(other)
     {

@@ -1,25 +1,31 @@
 const RED = "red";
 const GRAY = "gray";
-let currentTurnNewKings=[]
-let gameState = {
-    CurrentColorTurn: RED,
-    board : [],
-    picesInDanger:[],
-    roundsOnlyKingsMoveAndNoneTakenPiece:0,
-    boardHistory: [],
-    startMovmentPoint: {},
-    restart: function () {
-        this.CurrentColorTurn = RED
-        this.board = generateStartBoard()
-        this.picesInDanger = []
-        this.roundsOnlyKingsMoveAndNoneTakenPiece = 0
-        this.boardHistory = []
-        this.startMovmentPoint = {}
+class draughtsGameLogic {
+    constructor(updateUiFunc) {
+        this.currentTurnNewKings = []
+        this.updateBoardUi=updateUiFunc,
+        this.gameState = {
+            CurrentColorTurn: RED,
+            board: [],
+            picesInDanger: [],
+            roundsOnlyKingsMoveAndNonecapturedPiece: 0,
+            boardHistory: [],
+            startMovmentPoint: {},
+            restart: function (board) {
+                this.CurrentColorTurn = RED
+                this.board=board ,
+                this.picesInDanger = []
+                this.roundsOnlyKingsMoveAndNonecapturedPiece = 0
+                this.boardHistory = []
+                this.startMovmentPoint = {}
        
+            }
+        }
     }
+
 }
-function BoardPointer(board,beginRow=0,endRow=board.length-1,beginColumn=0,endColumn=board.length-1)
-{
+    
+BoardPointer=function(board, beginRow = 0, endRow = board.length - 1, beginColumn = 0, endColumn = board.length - 1) {
     let startRow = beginRow;
     let startColumn = beginColumn;
     this.row = startRow;
@@ -27,31 +33,25 @@ function BoardPointer(board,beginRow=0,endRow=board.length-1,beginColumn=0,endCo
     this.column = startColumn;
     this.endColumn = endColumn;
     this.isFinish = false;
-    this.getLocation = () => {return { row: this.row, column: this.column } }
-    this.getSquare = function ()
-    {
+    this.getLocation = () => { return { row: this.row, column: this.column } }
+    this.getSquare = function () {
         return board[this.row][this.column];
     }
-    this.moveSquare = function ()
-    {
-        if (this.column + 1 > this.endColumn)
-        {
+    this.moveSquare = function () {
+        if (this.column + 1 > this.endColumn) {
             this.column = startColumn;
-            if (this.row + 1 > this.endRow)
-            {
+            if (this.row + 1 > this.endRow) {
                 
                 this.row = startRow;
             }
             else this.row++;
         }
         else this.column++
-        this.isFinish=this.row==startRow&&this.column==startColumn
+        this.isFinish = this.row == startRow && this.column == startColumn
     }
     
 }
-gameState.restart();
-updateBoardUi(gameState.board);
-function generateStartBoard(){
+draughtsGameLogic.prototype.generateStartBoard=function(){
     let board = [];
     let picesCount = 0;
     for (let row = 0; row < 8; row++) {
@@ -72,10 +72,14 @@ function generateStartBoard(){
         }
         board.push(rowArray);
     }
-    updatePicesCanMove(board)
+    this.updatePicesCanMove(board)
     return board;
 }
-function getBoardString(board) {
+draughtsGameLogic.prototype.restartGame=function(){
+    this.gameState.restart(this.generateStartBoard());
+    this.updateBoardUi(this.gameState.board);
+}
+draughtsGameLogic.prototype.getBoardString=function(board) {
     let resultBoard="" ;
     for (let row = 0; row < board.length; row++) {
         let resultRow="" ;
@@ -90,21 +94,21 @@ function getBoardString(board) {
     }
     return resultBoard
 }
-function updatepossibleSquaresToMove(board, startMovmentPoint) {
-    for (let pointer = new BoardPointer(gameState.board); !pointer.isFinish;pointer.moveSquare()) {
+draughtsGameLogic.prototype.updatepossibleSquaresToMove=function(board, startMovmentPoint) {
+    for (let pointer = new BoardPointer(this.gameState.board); !pointer.isFinish;pointer.moveSquare()) {
         {
-                pointer.getSquare().isPossibleEndMovment = legalMove(board, startMovmentPoint, pointer.getLocation());
+                pointer.getSquare().isPossibleEndMovment = this.legalMove(board, startMovmentPoint, pointer.getLocation());
             }
     }
 }
-function updatePicesCanMove(board) {
-    UpdatePicesInDanger(board)
-    updateAllPicesCanNotMove(board)
+draughtsGameLogic.prototype.updatePicesCanMove=function(board) {
+    this.UpdatePicesInDanger(board)
+    this.updateAllPicesCanNotMove(board)
     for (let originPointer = new BoardPointer(board); !originPointer.isFinish; originPointer.moveSquare()) {
         if (!originPointer.getSquare().pieceOn)
             continue;
         for (let targetPointer = new BoardPointer(board); !targetPointer.isFinish; targetPointer.moveSquare()) {
-            if (legalMove(board, originPointer.getLocation(), targetPointer.getLocation())) {
+            if (this.legalMove(board, originPointer.getLocation(), targetPointer.getLocation())) {
 
                 board[originPointer.row][originPointer.column].pieceOn.canStartMovment = true;
             }
@@ -112,166 +116,192 @@ function updatePicesCanMove(board) {
     }    
 }
 
-function UpdatePicesInDanger(board, currentTurnNewKings) {
+draughtsGameLogic.prototype.UpdatePicesInDanger=function(board, currentTurnNewKings) {
     if (currentTurnNewKings)
         currentTurnNewKings.forEach((king) => king.isKing = false)
-    gameState.picesInDanger = []
+    this.gameState.picesInDanger = []
     for (let originPointer = new BoardPointer(board); !originPointer.isFinish; originPointer.moveSquare()) {
-        let pieceTryTake = originPointer.getSquare().pieceOn;
-        if (!pieceTryTake)
+        let pieceTryCapture = originPointer.getSquare().pieceOn;
+        if (!pieceTryCapture)
             continue;
-        let possibleTakeColumnLeft = originPointer.column - 1;
-        let possibleTakeColumnRight = originPointer.column + 1;
-        let possibleTakeRow = originPointer.row + 1 * pieceTryTake.getMovmentFactor
-        if (legalMove(board, originPointer.getLocation(),{ row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnLeft - 1 })&&board[possibleTakeRow][possibleTakeColumnLeft].pieceOn
-           )//left)
-        {
-            gameState.picesInDanger.push(board[possibleTakeRow][possibleTakeColumnLeft].pieceOn)
+        let possibleCaptureColumnLeft = originPointer.column - 1;
+        let possibleCaptureColumnRight = originPointer.column + 1;
+        let possibleCaptureRow = originPointer.row + 1 * pieceTryCapture.getMovmentFactor
+        if (pieceTryCapture.isKing) {
+            let possibleCaptureKingsRow = originPointer.row + 1 * (- pieceTryCapture.getMovmentFactor)
+            if (this.legalMove(board, originPointer.getLocation(), { row: possibleCaptureKingsRow + 1 * (-pieceTryCapture.getMovmentFactor), column: possibleCaptureColumnLeft - 1 }) && board[possibleCaptureKingsRow][possibleCaptureColumnLeft].pieceOn)//left)
+            {
+                this.gameState.picesInDanger.push(board[possibleCaptureKingsRow][possibleCaptureColumnLeft].pieceOn)
+            }
+            else if (this.legalMove(board, originPointer.getLocation()
+                , { row: possibleCaptureKingsRow + 1 * (-pieceTryCapture.getMovmentFactor), column: possibleCaptureColumnRight + 1 }) && board[possibleCaptureKingsRow][possibleCaptureColumnRight].pieceOn)//right)
+            {
+                this.gameState.picesInDanger.push(board[possibleCaptureKingsRow][possibleCaptureColumnRight].pieceOn)
+            }
+           
         }
-        else if (legalMove(board, originPointer.getLocation()
-        ,{ row: possibleTakeRow + 1 * pieceTryTake.getMovmentFactor, column: possibleTakeColumnRight + 1 })&&board[possibleTakeRow][possibleTakeColumnRight].pieceOn)//right)
+        let originLocation=originPointer.getLocation()
+        if (this.legalMove(board, originPointer.getLocation(), { row: possibleCaptureRow + 1 * pieceTryCapture.getMovmentFactor, column: possibleCaptureColumnLeft - 1 }) && board[possibleCaptureRow][possibleCaptureColumnLeft].pieceOn
+        )//left)
         {
-            gameState.picesInDanger.push(board[possibleTakeRow][possibleTakeColumnRight].pieceOn)   
-        } 
+            this.gameState.picesInDanger.push(board[possibleCaptureRow][possibleCaptureColumnLeft].pieceOn)
+        }
+        else if (this.legalMove(board, originLocation
+            , { row: possibleCaptureRow + 1 * pieceTryCapture.getMovmentFactor, column: possibleCaptureColumnRight + 1 }) && board[possibleCaptureRow][possibleCaptureColumnRight].pieceOn)//right)
+        {
+            this.gameState.picesInDanger.push(board[possibleCaptureRow][possibleCaptureColumnRight].pieceOn)
+        }
     }
     if (currentTurnNewKings)
         currentTurnNewKings.forEach((king) => king.isKing = true)
 }
-function updateAllPicesCanNotMove(board) {
+draughtsGameLogic.prototype.updateAllPicesCanNotMove=function(board,...piecesIdNotUpdate) {
     for (let pointer = new BoardPointer(board);!pointer.isFinish;pointer.moveSquare()) {
         {
             let pieceToUpdate=pointer.getSquare().pieceOn
-            if(pieceToUpdate)
-            pieceToUpdate.canStartMovment = false;
+            if (pieceToUpdate && (piecesIdNotUpdate.length === 0 || !piecesIdNotUpdate.some((pieceId) => pieceId === pieceToUpdate.id)))
+                pieceToUpdate.canStartMovment = false;
                 
             }
         }
     }
 
-function startMovment(startMovmentPoint)
+draughtsGameLogic.prototype.startMovment=function(startMovmentPoint)//uses directly game state
 {
-    gameState.startMovmentPoint = startMovmentPoint
-    updatepossibleSquaresToMove(gameState.board, gameState.startMovmentPoint);
-    updateBoardUi(gameState.board);
+    
+    if (this.gameState.startMovmentPoint.row && this.gameState.startMovmentPoint.row) {
+        let lastPieceSelected = this.gameState.board[this.gameState.startMovmentPoint.row][this.gameState.startMovmentPoint.column].pieceOn
+        if(lastPieceSelected&&lastPieceSelected.color===this.gameState.CurrentColorTurn)
+        lastPieceSelected.selected = false
+       
+    }
+    this.gameState.startMovmentPoint = startMovmentPoint
+    this.gameState.board[startMovmentPoint.row][startMovmentPoint.column].pieceOn.selected = true;
+    this.updatepossibleSquaresToMove(this.gameState.board, this.gameState.startMovmentPoint);
+    this.updateBoardUi(this.gameState.board);
 }
-function endMovment(targetlocation) {
-    if (gameState.startMovmentPoint === {})
+draughtsGameLogic.prototype.endMovment=function(targetlocation) {//uses directly game state
+    if (!this.gameState.startMovmentPoint.row||this.gameState.startMovmentPoint === {})
         return
-    let isCapturePiece = false;
-    let targetSquare = gameState.board[targetlocation.row][targetlocation.column]
-    let originSquare = gameState.board[gameState.startMovmentPoint.row][gameState.startMovmentPoint.column];
+    let CapturePieceInfo = {
+        madeCapture: false, pieceMadeCapture: {}
+    }
+    let targetSquare = this.gameState.board[targetlocation.row][targetlocation.column]
+    let originSquare = this.gameState.board[this.gameState.startMovmentPoint.row][this.gameState.startMovmentPoint.column];
     if (targetSquare && targetSquare.isPossibleEndMovment) {
-        if (Math.abs(targetlocation.row - gameState.startMovmentPoint.row) >= 2) {
-            isCapturePiece= handleCapture(targetlocation)
+        if (Math.abs(targetlocation.row - this.gameState.startMovmentPoint.row) >= 2) {
+            let isCapturePiece = this.handleCapture(targetlocation);
+            CapturePieceInfo={madeCapture:isCapturePiece, pieceMadeCapture:originSquare.pieceOn}
         }
         if (originSquare.pieceOn&&((originSquare.pieceOn.color == GRAY && targetlocation.row == 0)
             || originSquare.pieceOn.color == RED && targetlocation.row == 7)) {
-            CrownPiece(originSquare.pieceOn)
+            this.CrownPiece(originSquare.pieceOn)
         }
-        gameState.boardHistory.push(getBoardString(gameState.board))
+        this.gameState.boardHistory.push(this.getBoardString(this.gameState.board))
         targetSquare.pieceOn = originSquare.pieceOn;
         originSquare.pieceOn = null;
-        afterMovmentChecks(targetlocation,isCapturePiece)
+        this.afterMovmentChecks(targetlocation,CapturePieceInfo)
       
     }
 }
-function PassTurn() {
-    gameState.CurrentColorTurn = (gameState.CurrentColorTurn == RED ? GRAY : RED)
-            updatePicesCanMove(gameState.board)
-            updateAllSquaresNotPossibleMove(gameState.board)
-    updateBoardUi(gameState.board)
-    currentTurnNewKings = []
-    gameState.startMovmentPoint = {}
+draughtsGameLogic.prototype.PassTurn=function() {//uses directly game state
+    this.gameState.CurrentColorTurn = (this.gameState.CurrentColorTurn == RED ? GRAY : RED)
+    this.updatePicesCanMove(this.gameState.board)
+    this.updateAllSquaresNotPossibleMove(this.gameState.board)
+    this.updateBoardUi(this.gameState.board)
+    this.currentTurnNewKings = []
+    
+    this.gameState.startMovmentPoint = {}
 }
-function afterMovmentChecks(loactionMoveTo,isCapturePiece)
-{
-    if (isWin(gameState.board))
+draughtsGameLogic.prototype.afterMovmentChecks=function(loactionMoveTo,captureInfo)
+{//uses directly game state
+    if (this.isWin(this.gameState.board))
     {
-        showRestartPrompt(gameState.CurrentColorTurn +"won")
+        showRestartPrompt(this.gameState.CurrentColorTurn[0].toUpperCase()+this.gameState.CurrentColorTurn.slice(1) +" won")
         return;
     }
-   
-    updatepossibleSquaresToMove(gameState.board)
-    UpdatePicesInDanger(gameState.board,currentTurnNewKings);
-    if (!isInAreaPieceIndanger(gameState.board,loactionMoveTo)||!isCapturePiece) {
-        handleDraw(gameState.board[loactionMoveTo.row][loactionMoveTo.column])
-        
-        PassTurn();
+    this.updatepossibleSquaresToMove(this.gameState.board)
+    this.UpdatePicesInDanger(this.gameState.board,this.currentTurnNewKings);
+    if (!this.isInAreaPieceIndanger(this.gameState.board, loactionMoveTo) || !captureInfo.madeCapture) {
+        this.handleDraw(this.gameState.board[loactionMoveTo.row][loactionMoveTo.column])
+        this.PassTurn();
     }
-    else
-        updateBoardUi(gameState.board);
+    else {//line capture
+        this.gameState.startMovmentPoint=loactionMoveTo
+        captureInfo.pieceMadeCapture.selected = true;
+        this.startMovment(loactionMoveTo)
+    }
 }
-function isInAreaPieceIndanger(board, currentLocation) {
-    UpdatePicesInDanger(board, currentTurnNewKings)
+draughtsGameLogic.prototype.isInAreaPieceIndanger=function(board, currentLocation) {
+    
     let startRow = currentLocation.row - 1 < 0 ? 0 : currentLocation.row - 1;
     let endRow = (currentLocation.row + 1 >= board.length) ? board.length - 1 : currentLocation.row + 1;
     let startColumn = currentLocation.column - 1 < 0 ? 0 : currentLocation.column - 1;
     let endColumn = (currentLocation.column + 1 >= board.length) ? board.length - 1 : currentLocation.column + 1;
     for (let pointer = new BoardPointer(board, startRow, endRow, startColumn, endColumn); !pointer.isFinish; pointer.moveSquare()) {
-        if (gameState.picesInDanger.some((piece) => piece.equals(pointer.getSquare().pieceOn)))
+        if (this.gameState.picesInDanger.some((piece) => piece.equals(pointer.getSquare().pieceOn)))
             return true;
     }
     return false;
 
 }
-function handleCapture(targetlocation)
+draughtsGameLogic.prototype.handleCapture=function(targetlocation)
 {
-    let takeColumn = targetlocation.column - (targetlocation.column > gameState.startMovmentPoint.column?1:-1);
-    let takeRow = targetlocation.row -(gameState.startMovmentPoint.row < targetlocation.row ? 1 : -1)
-     if (gameState.board[takeRow][takeColumn].pieceOn) {
-        gameState.board[takeRow][takeColumn].pieceOn = null
-         gameState.roundsOnlyKingsMoveAndNoneTakenPiece = 0;
-         gameState.boardHistory=[]//after take a piece will the state until no will not repeat
+    let captureColumn = targetlocation.column - (targetlocation.column > this.gameState.startMovmentPoint.column?1:-1);
+    let captureRow = targetlocation.row -(this.gameState.startMovmentPoint.row < targetlocation.row ? 1 : -1)
+     if (this.gameState.board[captureRow][captureColumn].pieceOn) {
+        this.gameState.board[captureRow][captureColumn].pieceOn = null
+         this.gameState.roundsOnlyKingsMoveAndNonecapturedPiece = 0;
+         this.gameState.boardHistory=[]//after capture a piece  the history will not back
          return true;
     }
     return false;
 }
-function handleDraw(targetSquare) {
+draughtsGameLogic.prototype.handleDraw=function(targetSquare) {
     if (targetSquare.pieceOn && targetSquare.pieceOn.isKing )
-        gameState.roundsOnlyKingsMoveAndNoneTakenPiece++
+        this.gameState.roundsOnlyKingsMoveAndNonecapturedPiece++
     else
-        gameState.roundsOnlyKingsMoveAndNoneTakenPiece = 0;
-    let lastBordHistory=gameState.boardHistory[gameState.boardHistory.length-1]
-    if (gameState.boardHistory.filter((board) => board === lastBordHistory ).length === 3
-        || gameState.roundsOnlyKingsMoveAndNoneTakenPiece === 20) {
-        showRestartPrompt("it's a draw")
+        this.gameState.roundsOnlyKingsMoveAndNonecapturedPiece = 0;
+    let lastBordHistory=this.gameState.boardHistory[this.gameState.boardHistory.length-1]
+    if (this.gameState.boardHistory.filter((board) => board === lastBordHistory ).length === 3
+        || this.gameState.roundsOnlyKingsMoveAndNonecapturedPiece === 20) {
+            this.showRestartPrompt("It's a draw")
         return true;
     }
     return false;
 }
-function CrownPiece(piece) {
+draughtsGameLogic.prototype.CrownPiece=function(piece) {
     piece.isKing = true;
-    currentTurnNewKings.push(piece)
+    this.currentTurnNewKings.push(piece)
 }
-function updateAllSquaresNotPossibleMove(board) {
+draughtsGameLogic.prototype.updateAllSquaresNotPossibleMove=function(board) {
     for (let pointer = new BoardPointer(board);!pointer.isFinish;pointer.moveSquare()) {
             {
                 pointer.getSquare().isPossibleEndMovment = false;
             }
         }
-    }
-
-function legalMove(board, originLocation, targetLocation) {
+}
+draughtsGameLogic.prototype.legalMove=function(board, originLocation, targetLocation) {
     if (!originLocation || !targetLocation)
         return false;
     let pieceMoving = board[originLocation.row][originLocation.column].pieceOn;
  
     if (!pieceMoving || targetLocation.row < 0 || targetLocation.row >= board.length || targetLocation.column < 0 || targetLocation.column >= board[targetLocation.row].length
-    ||pieceMoving.color!==gameState.CurrentColorTurn|| board[targetLocation.row][targetLocation.column].pieceOn)
+    ||pieceMoving.color!==this.gameState.CurrentColorTurn|| board[targetLocation.row][targetLocation.column].pieceOn)
         return false;
        
     if (pieceMoving.isKing)
-        return isLegalKingMove(board, originLocation, targetLocation)
+        return this.isLegalKingMove(board, originLocation, targetLocation)
         
     if ((pieceMoving.color == GRAY && originLocation.row < targetLocation.row)
         ||(pieceMoving.color==RED&&originLocation.row > targetLocation.row))
         return false;
-    let isRegularMove=!gameState.picesInDanger.some((piece) => { return piece.color !== pieceMoving.color })
+    let isRegularMove=!this.gameState.picesInDanger.some((piece) => { return piece.color !== pieceMoving.color })
                         && originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
                         && Math.abs(originLocation.column - targetLocation.column) == 1
-    return (isRegularMove||isLegalCaptureMove(board,originLocation,targetLocation))
+    return (isRegularMove||this.isLegalCaptureMove(board,originLocation,targetLocation))
 }
-function isLegalCaptureMove(board, originLocation, targetLocation)
+draughtsGameLogic.prototype.isLegalCaptureMove=function(board, originLocation, targetLocation)
 {
     if (!board[originLocation.row][originLocation.column].pieceOn)
         return false
@@ -288,25 +318,25 @@ function isLegalCaptureMove(board, originLocation, targetLocation)
     }
     return false;
 }
-function isLegalKingMove(board, originLocation, targetLocation) {
+draughtsGameLogic.prototype.isLegalKingMove=function(board, originLocation, targetLocation) {
     if (!board[originLocation.row][originLocation.column].pieceOn
         || !board[originLocation.row][originLocation.column].pieceOn.isKing)
         return false;
     if (originLocation.row - originLocation.column != targetLocation.row - targetLocation.column
         && originLocation.row + originLocation.column != targetLocation.row + targetLocation.column)
         return false;
-    let isPathLegal=isLegalKingPath(board,originLocation,targetLocation)
+    let isPathLegal=this.isLegalKingPath(board,originLocation,targetLocation)
     if (!isPathLegal.value)
         return false;
     if (isPathLegal.eatPieceOnLoction)
         return true
    
-    if (isInAreaPieceIndanger(board,targetLocation)||gameState.picesInDanger.length>0)//no capture move
+    if (this.isInAreaPieceIndanger(board,targetLocation)||this.gameState.picesInDanger.length>0)//no capture move
         return false   
     else
         return true
 }
-function isLegalKingPath(board,originLocation,targetLocation)
+draughtsGameLogic.prototype.isLegalKingPath=function(board,originLocation,targetLocation)
 {
     if (board[targetLocation.row][targetLocation.column].pieceOn)
         return { value: false }
@@ -321,38 +351,29 @@ function isLegalKingPath(board,originLocation,targetLocation)
     for (let rowOffset = 1, columnOffset = 1;columnOffset <= numberOfColumnCheck&& rowOffset <= numberOfRowsCheck;columnOffset++, rowOffset++) {
             let rowToCheck = originLocation.row + rowOffset * rowFactor;
         let colToCheck = originLocation.column + columnOffset * columnFactor;
-        if (board[rowToCheck][colToCheck].pieceOn &&board[rowToCheck][colToCheck].pieceOn.color === gameState.CurrentColorTurn)
+        if (board[rowToCheck][colToCheck].pieceOn &&board[rowToCheck][colToCheck].pieceOn.color === this.gameState.CurrentColorTurn)
             return {value:false}
             if (board[rowToCheck][colToCheck].pieceOn) {
-                 if(rowToCheck+rowFactor==targetLocation.row&&colToCheck+columnFactor==targetLocation.column&&board[rowToCheck][colToCheck].pieceOn.color!=gameState.CurrentColorTurn)
+                 if(rowToCheck+rowFactor==targetLocation.row&&colToCheck+columnFactor==targetLocation.column&&board[rowToCheck][colToCheck].pieceOn.color!=this.gameState.CurrentColorTurn)
                      return { value: true, eatPieceOnLoction: { row: rowToCheck, column: colToCheck } };
                   else return {value:false} 
             }
     }
     return {value:true}
 }
-function isKingThreates(board, kingLocation)
-{
-    for (let pointer = new BoardPointer(board); !pointer.isFinish;pointer.moveSquare()) {
-            if (isLegalKingPath(board,kingLocation,pointer.getLocation()).eatPieceOnLoction)
-                return true;
-    }
-    return false;
-    }//not using function
-function isWin(board)
-{
-    gameState.CurrentColorTurn = gameState.CurrentColorTurn == RED ? GRAY : RED;
-    updatePicesCanMove(board);
+draughtsGameLogic.prototype.isWin = function (board) {
+    this.gameState.CurrentColorTurn = this.gameState.CurrentColorTurn == RED ? GRAY : RED;
+    this.updatePicesCanMove(board);
     let result = true;
-    for (let pointer = new BoardPointer(board); !pointer.isFinish;pointer.moveSquare()){
-            let pieceOnSquare = pointer.getSquare().pieceOn
-            if (pieceOnSquare && pieceOnSquare.color === gameState.CurrentColorTurn && pieceOnSquare.canStartMovment)
-                result= false;
+    for (let pointer = new BoardPointer(board); !pointer.isFinish; pointer.moveSquare()) {
+        let pieceOnSquare = pointer.getSquare().pieceOn
+        if (pieceOnSquare && pieceOnSquare.color === this.gameState.CurrentColorTurn && pieceOnSquare.canStartMovment)
+            result = false;
     }
-    gameState.CurrentColorTurn = gameState.CurrentColorTurn == RED ? GRAY : RED;
-    updatePicesCanMove(board);
+    this.gameState.CurrentColorTurn = this.gameState.CurrentColorTurn == RED ? GRAY : RED;
+    this.updatePicesCanMove(board);
     return result;
-    }
+}
 
 
 

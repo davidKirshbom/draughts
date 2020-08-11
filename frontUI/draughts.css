@@ -1,6 +1,7 @@
 body{
    margin: 0 0 0 0; 
    height: auto;
+   background:  #92dce5;
 }
 .hader{
     width: 100%;
@@ -9,6 +10,8 @@ display: block;
 margin: 0 0 0 0;
 font-size: 7rem;
 text-align: center;
+border-bottom-right-radius: 1rem;
+border-bottom-left-radius: 1rem;
 
 }
 .game_container
@@ -17,8 +20,9 @@ text-align: center;
 display: flex;
 flex-wrap: wrap;
 justify-content: center;
-background:  #92dce5;
-
+}
+#signature{
+    font-size: 2rem;
 }
 #instructions
 {
@@ -44,8 +48,8 @@ grid-auto-columns: 5rem;
 align-items: center;
 justify-items: center;
 margin-top: 2rem;
-border: 4rem solid #f09d51;
-border-radius: 10%;
+border: 3.7rem solid #f09d51;
+border-radius: 8%;
 }
 .white
 {
@@ -86,25 +90,29 @@ border-radius: 10%;
     display: flex;
     align-content: center;    
     justify-content: center;
-    opacity: 80%;
+    opacity: 70%;
 }
 .startEnable
 {
+    opacity:85%;
+}
+.startEnable.selected{
     opacity:100%;
 }
 .startEnable:hover
 {
-    opacity:60%;
+    opacity:200%;
 }
 img{
     background: transparent;
     height: 2rem;
     width: 2rem;
     align-self: center;
+    pointer-events: none;
 }
 .popPrompt
 {
-background: blue;
+background: #8c5e58;
 height: 10rem;
 width: 20rem;
 grid-row: 4/6;
@@ -112,20 +120,30 @@ grid-column: 3/7;
 display: flex;
 flex-wrap: wrap;
 justify-content: center;
+border-radius: 3%;
+z-index: 2;
 }
 .unVisibale
 {
-    visibility: hidden;
+    display: none;
 }
 .restartbutton
 {
-
-height: 5rem;
+background: #c17767;
+border: 0;
+height: 4.2rem;
 width: 8rem;
+border-radius: 7%;
+font-size: 2rem;
 }
 .popPrompt>p{
     width: 100%;
     color: palegreen;
     display: block;
     text-align: center;
+    font-size: 1.3rem;
+}
+li
+{
+    list-style:"\26C2" ;
 }
