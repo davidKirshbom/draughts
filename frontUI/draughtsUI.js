@@ -1,18 +1,20 @@
 const BLACK = "black"
 const WHITE = "white"
-let logic = new draughtsGameLogic(updateBoardUi);
-logic.restartGame();
+let game = new DraughtsGameLogic(updateBoardUi)
+game.restartGame()
 function beginMovment(event)
 { 
-    logic.startMovment(getPieceLocationOnBoardById(logic.gameState.board,parseInt(event.target.getAttribute("id"))))
+    game.startMovment(getPieceLocationOnBoardById(game.gameState.board,parseInt(event.target.getAttribute("id"))))
+    
     event.preventDefault();
 }
 function finishMovment(event) {
+    if(event.target !== event.currentTarget) return;
     let locationArr = event.target.id.split("")
     if (locationArr.length < 2)
         return;
     let targetlocation = { row: parseInt(locationArr[0]), column:parseInt(locationArr[1]) }
-    logic.endMovment(targetlocation)
+    game.endMovment(targetlocation)
 }
 function showRestartPrompt(message)
 {
@@ -21,24 +23,19 @@ function showRestartPrompt(message)
     promptUi.id = "popPrompt"
     promptUi.className = "popPrompt"
     let messagePargraph = document.createElement("p")
-
     messagePargraph.innerHTML=message +",<br> To restart press the button";
     promptUi.appendChild(messagePargraph)
     let restartButton = document.createElement("button")
-  
     restartButton.className = "restartbutton"
     restartButton.innerHTML = "Restart"
     promptUi.appendChild(restartButton)
     board.appendChild(promptUi)
-   
     restartButton.addEventListener("click", () => {
-        logic.restartGame()
-        updateBoardUi(logic.gameState.board)
-        board.removeChild(promptUi)
-        promptUi.className="unVisibale"
+        game.restartGame()
+        updateBoardUi(game.gameState.board)
+      
     })
 }  
-
 function updateBoardUi(board) {
     let boardUi = document.getElementsByClassName("board")[0]
     boardUi.innerHTML = "";
@@ -78,7 +75,8 @@ function createSquareUi(square,color,id)
     let squareUi = document.createElement("div");
     squareUi.color = color
     squareUi.className= square.getClassNameByState() + " " + squareUi.color;
-    squareUi.id =id 
+    squareUi.id = id 
+    if(!game.gameState.isGameOver)
     squareUi.addEventListener("click", finishMovment)
     return squareUi
 }
@@ -93,6 +91,7 @@ function createPieceUi(piece)
         pieceUi.append(crownImage);
     }
     pieceUi.id = piece.id//to connect between frontUI to back
+    if(!game.gameState.isGameOver)
     pieceUi.addEventListener("click", beginMovment)
     pieceUi.className = piece.getClassName()
     return pieceUi;

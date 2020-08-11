@@ -5,9 +5,10 @@ class Square {
         this.isPossibleEndMovment = false;
    
     }
-    getClassNameByState  () {
-        let className = "square ";
-            className += this.isPossibleEndMovment ? "endEnable" : "";
-        return className
-    } 
+   
 }
+Square.prototype.getClassNameByState=function () {
+    let className = "square ";
+        className += this.isPossibleEndMovment ? "endEnable" : "";
+    return className
+} 
