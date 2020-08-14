@@ -87,7 +87,7 @@ border-radius: 8%;
     display: flex;
     align-content: center;    
     justify-content: center;
-    opacity: 70%;
+    opacity: 55%;
 }
 .endEnable:hover
 {
@@ -106,7 +106,10 @@ border-radius: 8%;
 .startEnable.selected{
     opacity:100%;
 }
-
+.piece.gray.startEnable:hover
+{
+    background: #3F4354 ;
+}
 img{
     background: transparent;
     height: 2rem;

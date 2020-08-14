@@ -1,6 +1,6 @@
 const BLACK = "black"
 const WHITE = "white"
-let game = new DraughtsGameLogic(updateBoardUi)
+let game = new DraughtsGameLogic(updateBoardUi,showRestartPrompt)
 game.restartGame()
 function beginMovment(event)
 { 
@@ -42,48 +42,43 @@ function updateBoardUi(board) {
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             
-            let pieceUi;
+            
             let squareColor
             if (row % 2 == 0) {
                 if (column % 2 == 0)
-                squareColor = WHITE
+                    squareColor = WHITE
                 else
-                squareColor = BLACK
+                    squareColor = BLACK
             }
             else {
                 if (column % 2 == 0)
-                squareColor = BLACK
+                    squareColor = BLACK
                 else
-                squareColor = WHITE
+                    squareColor = WHITE
             }
-            if (pieceUi) {
-                squareUi.appendChild(pieceUi)
-            }
-            let squareUi=createSquareUi(board[row][column],squareColor,`${row}${column}`)
+            let squareUi = createSquareUi(board[row][column], squareColor, `${row}${column}`)
             squareUi.style.gridRow = `${row + 1}/${row + 2}`
             squareUi.style.gridColumn = `${column + 1}/${column + 2}`
             if (board[row][column].pieceOn) {
                 squareUi.appendChild(createPieceUi(board[row][column].pieceOn))
             }
-           boardUi.appendChild(squareUi);
+            boardUi.appendChild(squareUi);
         }
     }
   
 }
-function createSquareUi(square,color,id)
-{
+function createSquareUi(square, color, id) {
     let squareUi = document.createElement("div");
     squareUi.color = color
-    squareUi.className= square.getClassNameByState() + " " + squareUi.color;
-    squareUi.id = id 
-    if(!game.gameState.isGameOver)
-    squareUi.addEventListener("click", finishMovment)
+    squareUi.className = square.getClassNameByState() + " " + squareUi.color;
+    squareUi.id = id
+    if (!game.gameState.isGameOver)
+        squareUi.addEventListener("click", finishMovment)
     return squareUi
 }
-function createPieceUi(piece)
-{
+function createPieceUi(piece) {
     
-    pieceUi = document.createElement("span");
+   let pieceUi = document.createElement("span");
     if (piece.isKing) {
         let crownImage = document.createElement("img")
         crownImage.src = "./img/crown.png"
@@ -91,8 +86,8 @@ function createPieceUi(piece)
         pieceUi.append(crownImage);
     }
     pieceUi.id = piece.id//to connect between frontUI to back
-    if(!game.gameState.isGameOver)
-    pieceUi.addEventListener("click", beginMovment)
+    if (!game.gameState.isGameOver)
+        pieceUi.addEventListener("click", beginMovment)
     pieceUi.className = piece.getClassName()
     return pieceUi;
 }

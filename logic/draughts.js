@@ -1,9 +1,10 @@
 const RED = "red";
 const GRAY = "gray";
-function DraughtsGameLogic(updateUiFunc) {
+function DraughtsGameLogic(updateUiFunc ,messageToUserCallBack) {
     
-    this.currentTurnNewKings = [],
-        this.updateBoardUi = updateUiFunc,
+    this.currentTurnNewKings = []
+    this.updateBoardUi = updateUiFunc
+    this.promptToUser=messageToUserCallBack
         this.gameState = {
         CurrentColorTurn: RED,
         starterColor:GRAY,//updates at initial restart
@@ -29,7 +30,7 @@ function DraughtsGameLogic(updateUiFunc) {
 
 
 
-BoardPointer=function(board, beginRow = 0, endRow = board.length - 1, beginColumn = 0, endColumn = board.length - 1) {
+let BoardPointer=function(board, beginRow = 0, endRow = board.length - 1, beginColumn = 0, endColumn = board.length - 1) {
     let startRow = beginRow;
     let startColumn = beginColumn;
     this.row = startRow;
@@ -187,10 +188,10 @@ DraughtsGameLogic.prototype.updateAllPicesCanNotMove = function (board, ...piece
 DraughtsGameLogic.prototype.startMovment=function(startMovmentPoint)//changes directly game state
 {
     
-    if (this.gameState.startMovmentPoint.row && this.gameState.startMovmentPoint.row) {
+    if (this.gameState.startMovmentPoint.row) {
         let lastPieceSelected = this.gameState.board[this.gameState.startMovmentPoint.row][this.gameState.startMovmentPoint.column].pieceOn
-        if(lastPieceSelected&&lastPieceSelected.color===this.gameState.CurrentColorTurn)
-        lastPieceSelected.selected = false
+        if (lastPieceSelected && lastPieceSelected.color === this.gameState.CurrentColorTurn)
+            lastPieceSelected.selected = false
     }
     this.gameState.startMovmentPoint = startMovmentPoint
     this.gameState.board[startMovmentPoint.row][startMovmentPoint.column].pieceOn.selected = true;
@@ -240,7 +241,7 @@ DraughtsGameLogic.prototype.afterMovmentChecks=function(loactionMoveTo,captureIn
         this.updateAllPicesCanNotMove(board)
         this.updateAllSquaresNotPossibleMove(board)
         this.updateBoardUi(board)
-        showRestartPrompt(this.gameState.CurrentColorTurn[0].toUpperCase()+this.gameState.CurrentColorTurn.slice(1) +" won")
+        this.promptToUser(this.gameState.CurrentColorTurn[0].toUpperCase()+this.gameState.CurrentColorTurn.slice(1) +" won")
         return;
     }
     this.updatepossibleSquaresToMove(board)
@@ -291,7 +292,7 @@ DraughtsGameLogic.prototype.handleDraw=function(targetSquare) {
     let lastBordHistory=this.gameState.boardHistory[this.gameState.boardHistory.length-1]
     if (this.gameState.boardHistory.filter((board) => board === lastBordHistory ).length === 3
         || this.gameState.roundsOnlyKingsMoveAndNonecapturedPiece === 20) {
-        this.showRestartPrompt("It's a draw")
+            this.promptToUser("It's a draw")
         this.gameState.isGameOver = true;
         return true;
     }
@@ -358,10 +359,8 @@ DraughtsGameLogic.prototype.isLegalKingMove=function(board, originLocation, targ
     if (isPathLegal.eatPieceOnLoction)
         return true
    
-    if (this.isInAreaPieceIndanger(board,targetLocation)||this.gameState.picesInDanger.length>0)//no capture move
-        return false   
-    else
-        return true
+    return (this.isInAreaPieceIndanger(board,targetLocation)||this.gameState.picesInDanger.length>0)//no capture move
+  
 }
 DraughtsGameLogic.prototype.isLegalKingPath=function(board,originLocation,targetLocation)
 {
@@ -380,7 +379,7 @@ DraughtsGameLogic.prototype.isLegalKingPath=function(board,originLocation,target
         let colToCheck = originLocation.column + columnOffset * columnFactor;
         if (board[rowToCheck][colToCheck].pieceOn &&board[rowToCheck][colToCheck].pieceOn.color === this.gameState.CurrentColorTurn)
             return {value:false}
-            if (board[rowToCheck][colToCheck].pieceOn) {
+        else if (board[rowToCheck][colToCheck].pieceOn) {
                  if(rowToCheck+rowFactor==targetLocation.row&&colToCheck+columnFactor==targetLocation.column&&board[rowToCheck][colToCheck].pieceOn.color!=this.gameState.CurrentColorTurn)
                      return { value: true, eatPieceOnLoction: { row: rowToCheck, column: colToCheck } };
                   else return {value:false} 
