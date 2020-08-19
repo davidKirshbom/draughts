@@ -10,9 +10,11 @@
  
     <div class="hader">draughts</div>
     <div class="game_container">
-     
-   <div class="board">
-       
+   <div id="draughtsGameOne" class="board"></div>
+    <div id="draughtsGameTwo" class="board">  </div>
+    <div id="draughtsGameThree" class="board">  </div>
+    <div id="draughtsGameFour" class="board">  </div>
+    <div id="draughtsGameFive" class="board">  </div>
       
       <script src="../logic/piece.js"></script>
       <script src="../logic/square.js"></script>
@@ -20,6 +22,19 @@
       <script src="../logic/draughts.js"></script>
 
       <script src="./draughtsUI.js"></script>
+<script>new DraughtsGame("draughtsGameOne")</script>
+<script>new DraughtsGame("draughtsGameTwo")</script>
+<script>new DraughtsGame("draughtsGameThree")</script>
+<script>new DraughtsGame("draughtsGameFour")</script>
+<script>new DraughtsGame("draughtsGameFive")</script>
+
+
+
+
+
+
+
+      
    </div>
        <div id="instructions">
            <span class="title">instructions</span><br>

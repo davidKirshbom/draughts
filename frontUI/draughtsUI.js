@@ -1,24 +1,35 @@
+function DraughtsGame(gameGridContainerID) {
+    this.gameGridContainerID = gameGridContainerID;
+    
 const BLACK = "black"
 const WHITE = "white"
-let game = new DraughtsGameLogic(updateBoardUi,showRestartPrompt)
-game.restartGame()
-function beginMovment(event)
-{ 
-    game.startMovment(getPieceLocationOnBoardById(game.gameState.board,parseInt(event.target.getAttribute("id"))))
+
     
+    
+this.beginMovment=(event)=>
+{ 
+    this.game.startMovment(getPieceLocationOnBoardById(this.game.gameState.board,parseInt(event.target.getAttribute("id"))))
+    this.updateBoardUi(this.game.gameState.board)
     event.preventDefault();
 }
-function finishMovment(event) {
+this.finishMovment=(event)=> {
     if(event.target !== event.currentTarget) return;
     let locationArr = event.target.id.split("")
     if (locationArr.length < 2)
         return;
     let targetlocation = { row: parseInt(locationArr[0]), column:parseInt(locationArr[1]) }
-    game.endMovment(targetlocation)
+    this.game.endMovment(targetlocation)
+    this.updateBoardUi(this.game.gameState.board)
+    if (this.game.gameState.isGameOver)
+        if(this.game.gameState.isGameOverWin)
+            this.showRestartPrompt(this.game.gameState.CurrentColorTurn[0].toUpperCase() + this.game.gameState.CurrentColorTurn.slice(1) + " won")
+        else
+            this.showRestartPrompt("It's a draw")
+            
 }
-function showRestartPrompt(message)
+this.showRestartPrompt=(message)=>
 {
-    let board=document.getElementsByClassName("board")[0]
+    let board=document.getElementById(this.gameGridContainerID)
     let promptUi = document.createElement("div")
     promptUi.id = "popPrompt"
     promptUi.className = "popPrompt"
@@ -31,18 +42,42 @@ function showRestartPrompt(message)
     promptUi.appendChild(restartButton)
     board.appendChild(promptUi)
     restartButton.addEventListener("click", () => {
-        game.restartGame()
-        updateBoardUi(game.gameState.board)
+        this.game.restartGame()
+        this.updateBoardUi(this.game.gameState.board)
       
     })
-}  
-function updateBoardUi(board) {
-    let boardUi = document.getElementsByClassName("board")[0]
+    }  
+    this.createSquareUi=(square, color, id)=> {
+        let squareUi = document.createElement("div");
+        squareUi.color = color
+        squareUi.className = square.getClassNameByState() + " " + squareUi.color;
+        squareUi.id = id
+        if (!this.game.gameState.isGameOver)
+            squareUi.addEventListener("click", this.finishMovment)
+        return squareUi
+    }
+    this.createPieceUi = (piece) => {
+        
+        let pieceUi = document.createElement("span");
+        if (piece.isKing) {
+            let crownImage = document.createElement("img")
+            crownImage.src = "./img/crown.png"
+            crownImage.id = piece.id
+            pieceUi.append(crownImage);
+        }
+        pieceUi.id = piece.id//to connect between frontUI to back
+        if (!this.game.gameState.isGameOver)
+            pieceUi.addEventListener("click", this.beginMovment)
+        pieceUi.className = piece.getClassName()
+        return pieceUi;
+    }
+this.updateBoardUi=(board)=> {
+    let boardUi = document.getElementById(this.gameGridContainerID)
     boardUi.innerHTML = "";
     for (let row = 0; row < board.length; row++) {
         for (let column = 0; column < board[row].length; column++) {
             
-            
+                  
             let squareColor
             if (row % 2 == 0) {
                 if (column % 2 == 0)
@@ -56,41 +91,19 @@ function updateBoardUi(board) {
                 else
                     squareColor = WHITE
             }
-            let squareUi = createSquareUi(board[row][column], squareColor, `${row}${column}`)
+            let squareUi = this.createSquareUi(board[row][column], squareColor, `${row}${column}`)
             squareUi.style.gridRow = `${row + 1}/${row + 2}`
             squareUi.style.gridColumn = `${column + 1}/${column + 2}`
             if (board[row][column].pieceOn) {
-                squareUi.appendChild(createPieceUi(board[row][column].pieceOn))
+                squareUi.appendChild(this.createPieceUi(board[row][column].pieceOn))
             }
             boardUi.appendChild(squareUi);
         }
     }
   
 }
-function createSquareUi(square, color, id) {
-    let squareUi = document.createElement("div");
-    squareUi.color = color
-    squareUi.className = square.getClassNameByState() + " " + squareUi.color;
-    squareUi.id = id
-    if (!game.gameState.isGameOver)
-        squareUi.addEventListener("click", finishMovment)
-    return squareUi
-}
-function createPieceUi(piece) {
-    
-   let pieceUi = document.createElement("span");
-    if (piece.isKing) {
-        let crownImage = document.createElement("img")
-        crownImage.src = "./img/crown.png"
-        crownImage.id = piece.id
-        pieceUi.append(crownImage);
-    }
-    pieceUi.id = piece.id//to connect between frontUI to back
-    if (!game.gameState.isGameOver)
-        pieceUi.addEventListener("click", beginMovment)
-    pieceUi.className = piece.getClassName()
-    return pieceUi;
-}
+    //this.updateBoardUi = this.updateBoardUi.bind(this)
+   
 function getPieceLocationOnBoardById(board, id) {
     
     for (let row = 0; row < board.length; row++) {
@@ -100,4 +113,9 @@ function getPieceLocationOnBoardById(board, id) {
         }
     }
     return null;
+    }
+    this.game = new DraughtsGameLogic(this.showRestartPrompt)
+    this.game.restartGame()
+    this.updateBoardUi(this.game.gameState.board)
+  
 }

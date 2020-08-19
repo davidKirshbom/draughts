@@ -1,13 +1,13 @@
-const RED = "red";
-const GRAY = "gray";
+
 function DraughtsGameLogic(updateUiFunc ,messageToUserCallBack) {
+    DraughtsGameLogic.piecesColor = {GRAY: "gray",RED:"red"}
     
     this.currentTurnNewKings = []
-    this.updateBoardUi = updateUiFunc
-    this.promptToUser=messageToUserCallBack
+    //this.updateBoardUi = updateUiFunc
+    //this.promptToUser=messageToUserCallBack
         this.gameState = {
-        CurrentColorTurn: RED,
-        starterColor:GRAY,//updates at initial restart
+        CurrentColorTurn: DraughtsGameLogic.piecesColor.RED,
+        starterColor:DraughtsGameLogic.piecesColor.GRAY,//updates at initial restart
             isGameOver:false,
             board: [],
             picesInDanger: [],
@@ -15,8 +15,8 @@ function DraughtsGameLogic(updateUiFunc ,messageToUserCallBack) {
             boardHistory: [],
             startMovmentPoint: {},
             restart: function (board) {
-                this.CurrentColorTurn = (this.starterColor === RED ? GRAY : RED)
-                    this.starterColor=(this.CurrentColorTurn===RED?RED:GRAY)
+                this.CurrentColorTurn = (this.starterColor === DraughtsGameLogic.piecesColor.RED ? DraughtsGameLogic.piecesColor.GRAY : DraughtsGameLogic.piecesColor.RED)
+                    this.starterColor=(this.CurrentColorTurn===DraughtsGameLogic.piecesColor.RED?DraughtsGameLogic.piecesColor.RED:DraughtsGameLogic.piecesColor.GRAY)
                     this.board = board
                     this.picesInDanger = []
                 this.roundsOnlyKingsMoveAndNonecapturedPiece = 0
@@ -66,9 +66,9 @@ DraughtsGameLogic.prototype.generateStartBoard=function(){
             let pieceToAdd;
             if ((row + column) % 2 != 0) {
                 if (row < 3)
-                    pieceToAdd = new Piece( RED,picesCount++)
+                    pieceToAdd = new Piece( DraughtsGameLogic.piecesColor.RED,picesCount++)
                 else if (row >= 5)
-                    pieceToAdd = new Piece( GRAY, picesCount++)
+                    pieceToAdd = new Piece( DraughtsGameLogic.piecesColor.GRAY, picesCount++)
                
             }
             
@@ -81,7 +81,7 @@ DraughtsGameLogic.prototype.generateStartBoard=function(){
 }
 DraughtsGameLogic.prototype.restartGame=function(){
     this.gameState.restart(this.generateStartBoard());
-    this.updateBoardUi(this.gameState.board);
+    //this.updateBoardUi(this.gameState.board);
 }
 DraughtsGameLogic.prototype.getBoardString=function(board) {
     let resultBoard="" ;
@@ -196,7 +196,7 @@ DraughtsGameLogic.prototype.startMovment=function(startMovmentPoint)//changes di
     this.gameState.startMovmentPoint = startMovmentPoint
     this.gameState.board[startMovmentPoint.row][startMovmentPoint.column].pieceOn.selected = true;
     this.updatepossibleSquaresToMove(this.gameState.board, this.gameState.startMovmentPoint);
-    this.updateBoardUi(this.gameState.board);
+    //this.updateBoardUi(this.gameState.board);
 }
 DraughtsGameLogic.prototype.endMovment=function(targetlocation) {//changes directly game state
     if ((!this.gameState.startMovmentPoint.row&&this.gameState.startMovmentPoint.row!==0)||this.gameState.startMovmentPoint === {})
@@ -212,8 +212,8 @@ DraughtsGameLogic.prototype.endMovment=function(targetlocation) {//changes direc
             let isCapturePiece = this.handleCapture(targetlocation);
             CapturePieceInfo={madeCapture:isCapturePiece, pieceMadeCapture:originSquare.pieceOn}
         }
-        if (originSquare.pieceOn&&((originSquare.pieceOn.color == GRAY && targetlocation.row == 0)
-            || originSquare.pieceOn.color == RED && targetlocation.row == 7)) {
+        if (originSquare.pieceOn&&((originSquare.pieceOn.color == DraughtsGameLogic.piecesColor.GRAY && targetlocation.row == 0)
+            || originSquare.pieceOn.color == DraughtsGameLogic.piecesColor.RED && targetlocation.row == 7)) {
             this.CrownPiece(originSquare.pieceOn)
         }
         this.gameState.boardHistory.push(this.getBoardString(board))
@@ -224,10 +224,10 @@ DraughtsGameLogic.prototype.endMovment=function(targetlocation) {//changes direc
 }
 DraughtsGameLogic.prototype.PassTurn = function () {//changes directly game state
    let  board = this.gameState.board;
-    this.gameState.CurrentColorTurn = (this.gameState.CurrentColorTurn == RED ? GRAY : RED)
+    this.gameState.CurrentColorTurn = (this.gameState.CurrentColorTurn == DraughtsGameLogic.piecesColor.RED ? DraughtsGameLogic.piecesColor.GRAY : DraughtsGameLogic.piecesColor.RED)
     this.updatePicesCanMove(board)
     this.updateAllSquaresNotPossibleMove(board)
-    this.updateBoardUi(board)
+    //this.updateBoardUi(board)
     this.currentTurnNewKings = []
     
     this.gameState.startMovmentPoint = {}
@@ -240,8 +240,9 @@ DraughtsGameLogic.prototype.afterMovmentChecks=function(loactionMoveTo,captureIn
         this.gameState.isGameOver = true;
         this.updateAllPicesCanNotMove(board)
         this.updateAllSquaresNotPossibleMove(board)
-        this.updateBoardUi(board)
-        this.promptToUser(this.gameState.CurrentColorTurn[0].toUpperCase()+this.gameState.CurrentColorTurn.slice(1) +" won")
+        //this.updateBoardUi(board)
+        this.gameState.isGameOverWin = true;
+        //this.promptToUser(this.gameState.CurrentColorTurn[0].toUpperCase()+this.gameState.CurrentColorTurn.slice(1) +" won")
         return;
     }
     this.updatepossibleSquaresToMove(board)
@@ -249,7 +250,7 @@ DraughtsGameLogic.prototype.afterMovmentChecks=function(loactionMoveTo,captureIn
     let pieceMoved=board[loactionMoveTo.row][loactionMoveTo.column].pieceOn
     let needToMakeLineCapture = this.dangerousToPiecesInRow(board, loactionMoveTo, loactionMoveTo.row + pieceMoved.getMovmentFactor,pieceMoved.getMovmentFactor)
     if (pieceMoved.isKing)
-        needToMakeLineCapture=needToMakeLineCapture||this.dangerousToPiecesInRow(board, loactionMoveTo, loactionMoveTo.row - pieceMoved.getMovmentFactor,pieceMoved.getMovmentFactor)
+        needToMakeLineCapture=needToMakeLineCapture||this.dangerousToPiecesInRow(board, loactionMoveTo, loactionMoveTo.row - pieceMoved.getMovmentFactor,-pieceMoved.getMovmentFactor)
     if (!needToMakeLineCapture || !captureInfo.madeCapture) {
         this.handleDraw(board[loactionMoveTo.row][loactionMoveTo.column])
         this.PassTurn();
@@ -292,7 +293,8 @@ DraughtsGameLogic.prototype.handleDraw=function(targetSquare) {
     let lastBordHistory=this.gameState.boardHistory[this.gameState.boardHistory.length-1]
     if (this.gameState.boardHistory.filter((board) => board === lastBordHistory ).length === 3
         || this.gameState.roundsOnlyKingsMoveAndNonecapturedPiece === 20) {
-            this.promptToUser("It's a draw")
+            //this.promptToUser("It's a draw")
+        this.gameState.isGameOverWin = false;
         this.gameState.isGameOver = true;
         return true;
     }
@@ -321,8 +323,8 @@ DraughtsGameLogic.prototype.legalMove=function(board, originLocation, targetLoca
     if (pieceMoving.isKing)
         return this.isLegalKingMove(board, originLocation, targetLocation)
         
-    if ((pieceMoving.color == GRAY && originLocation.row < targetLocation.row)
-        ||(pieceMoving.color==RED&&originLocation.row > targetLocation.row))
+    if ((pieceMoving.color == DraughtsGameLogic.piecesColor.GRAY && originLocation.row < targetLocation.row)
+        ||(pieceMoving.color==DraughtsGameLogic.piecesColor.RED&&originLocation.row > targetLocation.row))
         return false;
     let isRegularMove=!this.gameState.picesInDanger.some((piece) => { return piece.color !== pieceMoving.color })
                         && originLocation.row + 1 * pieceMoving.getMovmentFactor == targetLocation.row
@@ -359,7 +361,7 @@ DraughtsGameLogic.prototype.isLegalKingMove=function(board, originLocation, targ
     if (isPathLegal.eatPieceOnLoction)
         return true
    
-    return (this.isInAreaPieceIndanger(board,targetLocation)||this.gameState.picesInDanger.length>0)//no capture move
+    return ((!this.isInAreaPieceIndanger(board,originLocation))&&this.gameState.picesInDanger.length===0)//no capture move
   
 }
 DraughtsGameLogic.prototype.isLegalKingPath=function(board,originLocation,targetLocation)
@@ -388,7 +390,7 @@ DraughtsGameLogic.prototype.isLegalKingPath=function(board,originLocation,target
     return {value:true}
 }
 DraughtsGameLogic.prototype.isWin = function (board) {
-    this.gameState.CurrentColorTurn = this.gameState.CurrentColorTurn == RED ? GRAY : RED;
+    this.gameState.CurrentColorTurn = this.gameState.CurrentColorTurn == DraughtsGameLogic.piecesColor.RED ? DraughtsGameLogic.piecesColor.GRAY : DraughtsGameLogic.piecesColor.RED;
     this.updatePicesCanMove(board);
     let result = true;
     for (let pointer = new BoardPointer(board); !pointer.isFinish; pointer.moveSquare()) {
@@ -396,7 +398,7 @@ DraughtsGameLogic.prototype.isWin = function (board) {
         if (pieceOnSquare && pieceOnSquare.color === this.gameState.CurrentColorTurn && pieceOnSquare.canStartMovment)
             result = false;
     }
-    this.gameState.CurrentColorTurn = this.gameState.CurrentColorTurn == RED ? GRAY : RED;
+    this.gameState.CurrentColorTurn = this.gameState.CurrentColorTurn == DraughtsGameLogic.piecesColor.RED ? DraughtsGameLogic.piecesColor.GRAY : DraughtsGameLogic.piecesColor.RED;
     this.updatePicesCanMove(board);
     return result;
 }
